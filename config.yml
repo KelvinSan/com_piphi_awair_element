@@ -1,0 +1,11 @@
+configurations:
+  manual:
+    title: Manual Configuration
+    description: Manual configuration for adding integration
+    required: 
+      - ip_address
+    type: object
+    properties:
+      ip_address:
+        title: IP Address
+        type: string
