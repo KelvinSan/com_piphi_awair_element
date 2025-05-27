@@ -3,6 +3,8 @@ from lib.sensors.integrations.discovery.zeroconf.zeroconf_discovery import confi
 
 context:dict = {}
 
+def hello_world():
+    return "Hello World"
 
 async def discover():
     filtered = {}
