@@ -4,7 +4,7 @@ from lib.sensors.integrations.discovery.zeroconf.zeroconf_discovery import confi
 context:dict = {}
 
 def hello_world():
-    return "Hello World"
+    return "Hello PiPhi Network"
 
 async def discover():
     filtered = {}
