@@ -1,0 +1,43 @@
+{
+  "name": "Awair Element (Local API)",
+  "version": "1.0.0",
+  "description": "Integration for Awair Element devices over the local network",
+
+  "config": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string", "format": "ipv4" },
+        "poll_interval": { "type": "integer", "minimum": 5, "maximum": 300, "default": 60 }
+      },
+      "required": ["host"]
+    },
+    "ui": {
+      "host": {
+        "title": "Device IP",
+        "description": "The local IP address of your Awair Element",
+        "widget": "text"
+      }
+    }
+  },
+
+  "capabilities": [
+    "temperature",
+    "humidity",
+    "co2",
+    "voc",
+    "pm25",
+    "score"
+  ],
+
+  "commands": {},
+
+  "entities": [
+    { "id": "temperature", "name": "Temperature", "capabilities": ["temperature"], "unit": "°C" },
+    { "id": "humidity", "name": "Humidity", "capabilities": ["humidity"], "unit": "%" },
+    { "id": "co2", "name": "CO₂", "capabilities": ["co2"], "unit": "ppm" },
+    { "id": "voc", "name": "VOC", "capabilities": ["voc"], "unit": "ppb" },
+    { "id": "pm25", "name": "PM2.5", "capabilities": ["pm25"], "unit": "µg/m³" },
+    { "id": "score", "name": "Air Quality Score", "capabilities": ["score"], "unit": "score" }
+  ]
+}
