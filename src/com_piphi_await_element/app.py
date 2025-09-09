@@ -3,6 +3,7 @@
 
 import json
 import multiprocessing
+from pathlib import Path
 import aiofiles
 from fastapi import FastAPI
 from com_piphi_await_element.contract.health.router import router as health_router
@@ -14,7 +15,8 @@ app.include_router(health_router)
 
 @app.get("/manifest.json")
 async def display_manifest():
-    async with aiofiles.open("manifest.json") as f:
+    path = Path(__file__).parent.parent / "manifest.json"
+    async with aiofiles.open(path) as f:
         return json.loads(await f.read())
 
 if __name__ == "__main__":
