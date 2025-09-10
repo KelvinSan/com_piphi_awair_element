@@ -1,9 +1,10 @@
 {
   "name": "Awair Element (Local API)",
-  "version": "1.0.0",
+  "version": "latest",
   "description": "Integration for Awair Element devices over the local network",
-  "image": "awair/element-local",
+  "image": "piphinetwork/piphi-network-awair-element-integration",
   "container_port": 8000,
+  "type": "integration",
   "config": {
     "schema": {
       "type": "object",
