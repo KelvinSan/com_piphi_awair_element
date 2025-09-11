@@ -1,9 +1,9 @@
 {
   "name": "Awair Element (Local API)",
-  "version": "1.0.0",
+  "version": "latest",
   "description": "Integration for Awair Element devices over the local network",
 
-  "image": "ghcr.io/your-org/awair-element:1.0.0",
+  "image": "piphinetwork/piphi-network-awair-element-integration",
 
   "container": {
     "ports": [
