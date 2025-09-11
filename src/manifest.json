@@ -1,10 +1,25 @@
 {
   "name": "Awair Element (Local API)",
-  "version": "latest",
+  "version": "1.0.0",
   "description": "Integration for Awair Element devices over the local network",
-  "image": "piphinetwork/piphi-network-awair-element-integration",
-  "container_port": 8000,
-  "type": "integration",
+
+  "image": "ghcr.io/your-org/awair-element:1.0.0",
+
+  "container": {
+    "ports": [
+      { "container": 3665, "host": 3665 }
+    ],
+    "environment": {
+      "LOG_LEVEL": "info"
+    },
+    "volumes": [
+      { "host": "/data/awair", "container": "/app/data" }
+    ],
+    "restart_policy": {
+      "name": "unless-stopped"
+    }
+  },
+
   "config": {
     "schema": {
       "type": "object",
@@ -21,6 +36,7 @@
       }
     }
   },
+
   "capabilities": [
     "temperature",
     "humidity",
@@ -29,13 +45,14 @@
     "pm25",
     "score"
   ],
-  "commands": {},
+
+  "commands": {
+    "refresh": { "description": "Force refresh device state" }
+  },
+
   "entities": [
     { "id": "temperature", "name": "Temperature", "capabilities": ["temperature"], "unit": "°C" },
     { "id": "humidity", "name": "Humidity", "capabilities": ["humidity"], "unit": "%" },
-    { "id": "co2", "name": "CO₂", "capabilities": ["co2"], "unit": "ppm" },
-    { "id": "voc", "name": "VOC", "capabilities": ["voc"], "unit": "ppb" },
-    { "id": "pm25", "name": "PM2.5", "capabilities": ["pm25"], "unit": "µg/m³" },
-    { "id": "score", "name": "Air Quality Score", "capabilities": ["score"], "unit": "score" }
+    { "id": "co2", "name": "CO₂", "capabilities": ["co2"], "unit": "ppm" }
   ]
 }
