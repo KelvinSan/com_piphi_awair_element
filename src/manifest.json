@@ -4,7 +4,6 @@
   "description": "Integration for Awair Element devices over the local network",
 
   "image": "piphinetwork/piphi-network-awair-element-integration",
-
   "container": {
     "ports": [
       { "container": 3665, "host": 3665 }

@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:6582c2ea7a6d0f47238cbfc0ebc203f7428a1531f38bc39434783f2040560c2b"
+content_hash = "sha256:2bc1d1d974a45be8d83955aa239cdb311389ebc51a7f865cd393f518e42dfe92"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -274,6 +274,16 @@ groups = ["default"]
 files = [
     {file = "idna-3.10-py3-none-any.whl", hash = "sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3"},
     {file = "idna-3.10.tar.gz", hash = "sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9"},
+]
+
+[[package]]
+name = "ifaddr"
+version = "0.2.0"
+summary = "Cross-platform network interface and IP address enumeration library"
+groups = ["default"]
+files = [
+    {file = "ifaddr-0.2.0-py3-none-any.whl", hash = "sha256:085e0305cfe6f16ab12d72e2024030f5d52674afad6911bb1eee207177b8a748"},
+    {file = "ifaddr-0.2.0.tar.gz", hash = "sha256:cc0cbfcaabf765d44595825fb96a99bb12c79716b73b44330ea38ee2b0c4aed4"},
 ]
 
 [[package]]
@@ -708,4 +718,29 @@ files = [
     {file = "websockets-15.0.1-cp312-cp312-win_amd64.whl", hash = "sha256:fcd5cf9e305d7b8338754470cf69cf81f420459dbae8a3b40cee57417f4614a7"},
     {file = "websockets-15.0.1-py3-none-any.whl", hash = "sha256:f7a866fbc1e97b5c617ee4116daaa09b722101d4a3c170c787450ba409f9736f"},
     {file = "websockets-15.0.1.tar.gz", hash = "sha256:82544de02076bafba038ce055ee6412d68da13ab47f0c60cab827346de828dee"},
+]
+
+[[package]]
+name = "zeroconf"
+version = "0.147.2"
+requires_python = "<4.0,>=3.9"
+summary = "A pure python implementation of multicast DNS service discovery"
+groups = ["default"]
+dependencies = [
+    "ifaddr>=0.1.7",
+]
+files = [
+    {file = "zeroconf-0.147.2-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:d2bf175fa6226596cdd9a6ec93b2319b1c8e2e735f23a295ac59d192fbb70c68"},
+    {file = "zeroconf-0.147.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:7f6ae2978034bebb48f629fc070e960bb1edee548d171ca5ff30c8a634fde908"},
+    {file = "zeroconf-0.147.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:593316ef66ffe4920a8958409757d218d533f856c25028ae6bcea50129fe1da4"},
+    {file = "zeroconf-0.147.2-cp312-cp312-manylinux_2_17_i686.manylinux_2_5_i686.manylinux1_i686.manylinux2014_i686.whl", hash = "sha256:0958a0dbe5e84270ab36412cb290e72c87d63b931d260bc2f4a4a35c11729cab"},
+    {file = "zeroconf-0.147.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:23ea2fde9091ebc765e936c3f70f31f3053cadd2e7c96bbdabb8c7f58d922170"},
+    {file = "zeroconf-0.147.2-cp312-cp312-manylinux_2_31_armv7l.manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:fa36dd4a1f01acdf1ceee98ebb83df696ce03314908fb7a14292ebe61b25151f"},
+    {file = "zeroconf-0.147.2-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:94a60cffde70d1cb50ff84290ddbfb56cb01093c008ab135c0ad94bcfd877610"},
+    {file = "zeroconf-0.147.2-cp312-cp312-musllinux_1_2_armv7l.whl", hash = "sha256:5e0bc1274d8157a21d43705b256b3320b25756dbc25ca017f7ae1fe66877c93f"},
+    {file = "zeroconf-0.147.2-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:777d71ae5154707175d9d392c7f37a2b810e862228409a0ea38459d4e4efd67a"},
+    {file = "zeroconf-0.147.2-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:58ef18096a566878238bb2190537fdd87949ce324d40540f60f2553fbcea8120"},
+    {file = "zeroconf-0.147.2-cp312-cp312-win32.whl", hash = "sha256:ffc2c93167c43bf7e8387c1c860813b26ebf4dfe5c71a68c2ef4911b01a46ae6"},
+    {file = "zeroconf-0.147.2-cp312-cp312-win_amd64.whl", hash = "sha256:7a94e0a3814b07bf7e848300166f890eb37d30d5e07030bbd144936674370e41"},
+    {file = "zeroconf-0.147.2.tar.gz", hash = "sha256:2f91e2544433acfa928c8dbaea7af8bf0644e06904610799d6b762fd599d81bd"},
 ]
