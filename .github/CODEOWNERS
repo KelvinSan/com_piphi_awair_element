@@ -1,0 +1,9 @@
+# Global code owners
+* @KelvinSan @newCodeOwner
+
+# Specific areas requiring admin approval
+src/com_piphi_await_element/ @KelvinSan @newCodeOwner
+.github/workflows/ @KelvinSan @newCodeOwner
+dockerfile @KelvinSan @newCodeOwner
+requirements.txt @KelvinSan @newCodeOwner
+pyproject.toml @KelvinSan @newCodeOwner
