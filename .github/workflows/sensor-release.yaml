@@ -1,0 +1,99 @@
+name: Build Docker Image - New Sensor (Patch Release)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+  push:
+    tags:
+      - 'v*.*.+([1-9])*'  # Only patch versions (v1.2.1, v1.2.2, etc.)
+
+jobs:
+  build:
+    # Run this job when:
+    # 1. A PR with 'new-sensor' label is merged into main, OR
+    # 2. Workflow is manually triggered, OR  
+    # 3. A semantic version tag is pushed
+    if: >
+      (github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'new-sensor')) || 
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for version calculation
+
+      - name: Get next version
+        id: version
+        run: |
+          # Get the latest tag that matches semantic versioning pattern
+          LATEST_TAG=$(git tag --list --sort=-version:refname | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" | head -1)
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # No previous tags, start with v1.0.1
+            NEW_VERSION="v1.0.1"
+          else
+            # Extract version parts
+            VERSION_WITHOUT_V=${LATEST_TAG#v}
+            MAJOR=$(echo $VERSION_WITHOUT_V | cut -d. -f1)
+            MINOR=$(echo $VERSION_WITHOUT_V | cut -d. -f2)
+            PATCH=$(echo $VERSION_WITHOUT_V | cut -d. -f3)
+            
+            # Increment patch version
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+          fi
+          
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest version: $LATEST_TAG"
+          echo "New version: $NEW_VERSION"
+
+      - name: Create and push new tag
+        if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'new-sensor')
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git tag -a ${{ steps.version.outputs.new_version }} -m "Auto-release: Add new sensor from PR #${{ github.event.pull_request.number }}"
+          git push origin ${{ steps.version.outputs.new_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3 
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: piphinetwork/smarthome
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.version.outputs.new_version }},enable=${{ github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'new-sensor') }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{date 'YYYYMMDD'}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          file: ./dockerfile
+          platforms: linux/amd64,linux/arm64
