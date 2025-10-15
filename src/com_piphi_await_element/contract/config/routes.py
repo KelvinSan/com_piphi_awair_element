@@ -1,13 +1,13 @@
-
 import asyncio
 import datetime
 import random
 from typing import Dict
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 import httpx
 from com_piphi_await_element.lib.schemas import AwairElement
 import hmac, hashlib, json
 from com_piphi_await_element.lib.store import device as device_store
+
 config_router = APIRouter(tags=['config'])
 
 polling: Dict[str, asyncio.Task] = {}
@@ -83,7 +83,6 @@ async def fetch_awair_data(ip_address: str):
 
 @config_router.post('/config')
 async def config(payload:AwairElement):
-    print(payload)
     device_store.update(payload.model_dump())
     existing_poll = polling.get(payload.id)
     if existing_poll and not existing_poll.done():
