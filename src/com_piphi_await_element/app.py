@@ -30,5 +30,11 @@ async def display_manifest():
         return json.loads(await f.read())
 
 if __name__ == "__main__":
+    config = {
+        "version": 1,
+        "formatters": {"default": {"format": "%(asctime)s [%(levelname)s] %(message)s"}},
+        "handlers": {"default": {"class": "logging.StreamHandler", "formatter": "default"}},
+        "root": {"handlers": ["default"], "level": "INFO"},
+    }
     multiprocessing.freeze_support()
-    uvicorn.run("piphi:app", host="0.0.0.0", port=3665, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=3665, log_config=config)

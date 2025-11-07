@@ -3,6 +3,17 @@
   "version": "0.0.1",
   "description": "Integration for Awair Element devices over the local network",
   "image": "piphinetwork/awair-element",
+  "discovery":{
+    "linux":{
+      "method": "direct"
+    },
+    "windows":{
+      "method": "proxy"
+    },
+    "macos":{
+      "method": "proxy"
+    }
+  },
   "container": {
     "ports": [
       { "container": 3665, "host": 3665 }
