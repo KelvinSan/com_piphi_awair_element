@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:fb01b94575ed5d737bd6aecbac78df68a0a0e6d6f61afd8e287ec6445151d26f"
+content_hash = "sha256:7b86c85dc12edeee283910dd16a671441214eaa3192bc06f52d1ceb9f845a21c"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -370,6 +370,15 @@ files = [
 ]
 
 [[package]]
+name = "netifaces"
+version = "0.11.0"
+summary = "Portable network interface information."
+groups = ["default"]
+files = [
+    {file = "netifaces-0.11.0.tar.gz", hash = "sha256:043a79146eb2907edf439899f262b3dfe41717d34124298ed281139a8b93ca32"},
+]
+
+[[package]]
 name = "packaging"
 version = "25.0"
 requires_python = ">=3.8"
@@ -533,6 +542,17 @@ files = [
 ]
 
 [[package]]
+name = "pywin32"
+version = "306"
+summary = "Python for Window Extensions"
+groups = ["default"]
+files = [
+    {file = "pywin32-306-cp312-cp312-win32.whl", hash = "sha256:383229d515657f4e3ed1343da8be101000562bf514591ff383ae940cad65458b"},
+    {file = "pywin32-306-cp312-cp312-win_amd64.whl", hash = "sha256:37257794c1ad39ee9be652da0462dc2e394c8159dfd913a8a4e8eb6fd346da0e"},
+    {file = "pywin32-306-cp312-cp312-win_arm64.whl", hash = "sha256:5821ec52f6d321aa59e2db7e0a35b997de60c201943557d108af9d4ae1ec7040"},
+]
+
+[[package]]
 name = "pywin32-ctypes"
 version = "0.2.3"
 requires_python = ">=3.6"
@@ -679,6 +699,20 @@ dependencies = [
 files = [
     {file = "starlette-0.47.3-py3-none-any.whl", hash = "sha256:89c0778ca62a76b826101e7c709e70680a1699ca7da6b44d38eb0a7e61fe4b51"},
     {file = "starlette-0.47.3.tar.gz", hash = "sha256:6bc94f839cc176c4858894f1f8908f0ab79dfec1a6b8402f6da9be26ebea52e9"},
+]
+
+[[package]]
+name = "supervisor-win"
+version = "4.7.0"
+summary = "A system for controlling process state under WINDOWS"
+groups = ["default"]
+dependencies = [
+    "pywin32<=306,>228",
+    "setuptools; python_version < \"3.8\"",
+]
+files = [
+    {file = "supervisor-win-4.7.0.tar.gz", hash = "sha256:c474d92edc7050b55adae2f7c7789d5d69f180dee7868a27673b1d38f8bea484"},
+    {file = "supervisor_win-4.7.0-py2.py3-none-any.whl", hash = "sha256:bd98554c2a0878704c3f3fd95e38965d9986eae6a2ad29f34d73d0aee138a481"},
 ]
 
 [[package]]
