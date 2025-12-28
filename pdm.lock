@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:7b86c85dc12edeee283910dd16a671441214eaa3192bc06f52d1ceb9f845a21c"
+content_hash = "sha256:e1be959c5ef40640caa3cd4a91ea6a2746030d371705402111868661e8be5544"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -546,6 +546,7 @@ name = "pywin32"
 version = "306"
 summary = "Python for Window Extensions"
 groups = ["default"]
+marker = "sys_platform == \"win32\""
 files = [
     {file = "pywin32-306-cp312-cp312-win32.whl", hash = "sha256:383229d515657f4e3ed1343da8be101000562bf514591ff383ae940cad65458b"},
     {file = "pywin32-306-cp312-cp312-win_amd64.whl", hash = "sha256:37257794c1ad39ee9be652da0462dc2e394c8159dfd913a8a4e8eb6fd346da0e"},
@@ -706,6 +707,7 @@ name = "supervisor-win"
 version = "4.7.0"
 summary = "A system for controlling process state under WINDOWS"
 groups = ["default"]
+marker = "sys_platform == \"win32\""
 dependencies = [
     "pywin32<=306,>228",
     "setuptools; python_version < \"3.8\"",
