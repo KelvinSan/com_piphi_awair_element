@@ -1,71 +1,149 @@
 {
+  "manifest_version": "1.0",
+  "id": "awair-element-local-api",
   "name": "Awair Element (Local API)",
   "version": "0.0.1",
   "description": "Integration for Awair Element devices over the local network",
-  "image": "piphinetwork/awair-element",
+
+  "maintainer": {
+    "name": "PiPhi Network",
+    "website": "https://piphi.io",
+    "support_email": "support@piphi.io"
+  },
+
   "platforms": ["linux", "windows", "macos"],
-  "discovery":{
-    "linux":{
-      "method": "direct"
+
+  "runtime": {
+    "linux": {
+      "type": "container",
+      "container": {
+        "image": "piphinetwork/awair-element",
+        "ports": [{ "container": 3665, "host": 3665 }],
+        "environment": {
+          "LOG_LEVEL": "info"
+        },
+        "volumes": [{ "host": "/data/awair", "container": "/app/data", "mode": "rw" }],
+        "restart_policy": {
+          "name": "unless-stopped",
+          "maximum_retry_count": 0
+        }
+      },
+      "discovery": { "method": "direct" }
     },
-    "windows":{
-      "method": "proxy"
+    "windows": {
+      "type": "proxy",
+      "proxy": { "port": 3665 },
+      "discovery": { "method": "proxy" }
     },
-    "macos":{
-      "method": "proxy"
+    "macos": {
+      "type": "proxy",
+      "proxy": { "port": 3665 },
+      "discovery": { "method": "proxy" }
     }
   },
-  "proxy":{
-    "port": 3665
-  },
-  "container": {
-    "ports": [
-      { "container": 3665, "host": 3665 }
-    ],
-    "environment": {
-      "LOG_LEVEL": "info"
-    },
-    "volumes": [
-      { "host": "/data/awair", "container": "/app/data" }
-    ],
-    "restart_policy": {
-      "name": "unless-stopped"
+
+  "api": {
+    "base_url": "http://127.0.0.1:3665",
+    "endpoints": {
+      "health": "/health",
+      "discover": "/discover",
+      "entities": "/entities",
+      "state": "/state",
+      "command": "/command",
+      "ui_config": "/ui-config",
+      "events": "/events"
     }
   },
 
   "config": {
-    "schema": {
-      "type": "object",
-      "properties": {
-        "host": { "type": "string", "format": "ipv4" }
-      },
-      "required": ["host"]
+    "source": "endpoint",
+    "endpoint": "/ui-config",
+    "required": true
+  },
+
+  "capabilities": {
+    "temperature": {
+      "kind": "sensor",
+      "unit": "°C",
+      "dashboard": {
+        "allowed_widgets": ["stat", "line_chart", "gauge"],
+        "default_widget": "stat"
+      }
     },
-    "ui": {
-      "host": {
-        "title": "Device IP",
-        "description": "The local IP address of your Awair Element",
-        "widget": "text"
+    "humidity": {
+      "kind": "sensor",
+      "unit": "%",
+      "dashboard": {
+        "allowed_widgets": ["stat", "line_chart", "gauge"],
+        "default_widget": "gauge"
+      }
+    },
+    "co2": {
+      "kind": "sensor",
+      "unit": "ppm",
+      "dashboard": {
+        "allowed_widgets": ["stat", "line_chart", "gauge"],
+        "default_widget": "stat"
+      }
+    },
+    "refresh": {
+      "kind": "action",
+      "dashboard": {
+        "allowed_widgets": ["button"],
+        "default_widget": "button"
       }
     }
   },
 
-  "capabilities": [
-    "temperature",
-    "humidity",
-    "co2",
-    "voc",
-    "pm25",
-    "score"
-  ],
-
   "commands": {
-    "refresh": { "description": "Force refresh device state" }
+    "refresh": {
+      "description": "Force refresh device state",
+      "timeout_ms": 5000
+    }
   },
 
   "entities": [
-    { "id": "temperature", "name": "Temperature", "capabilities": ["temperature"], "unit": "°C" },
-    { "id": "humidity", "name": "Humidity", "capabilities": ["humidity"], "unit": "%" },
-    { "id": "co2", "name": "CO₂", "capabilities": ["co2"], "unit": "ppm" }
+    {
+      "id": "temperature",
+      "name": "Temperature",
+      "capabilities": ["temperature"]
+    },
+    {
+      "id": "humidity",
+      "name": "Humidity",
+      "capabilities": ["humidity"]
+    },
+    {
+      "id": "co2",
+      "name": "CO₂",
+      "capabilities": ["co2"]
+    },
+    {
+      "id": "refresh_action",
+      "name": "Refresh",
+      "capabilities": ["refresh"]
+    }
+  ],
+
+  "extensions": [
+    {
+      "id": "rtl433_ingest",
+      "enabled_by_default": false,
+      "type": "event_ingestion",
+      "runtime": {
+        "linux": {
+          "type": "container_sidecar",
+          "container": {
+            "image": "ghcr.io/merbanan/rtl_433:latest",
+            "network_mode": "host",
+            "privileged": true
+          }
+        }
+      },
+      "outputs": {
+        "endpoint": "/events",
+        "event_type": "radio_packet"
+      }
+    }
   ]
 }
