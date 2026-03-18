@@ -50,6 +50,9 @@
       "entities": "/entities",
       "state": "/state",
       "command": "/command",
+      "config": "/config",
+      "config_sync": "/configs/sync",
+      "deconfigure": "/deconfigure",
       "ui_config": "/ui-config",
       "events": "/events"
     }
@@ -59,6 +62,10 @@
     "source": "endpoint",
     "endpoint": "/ui-config",
     "required": true
+  },
+
+  "identity": {
+    "fields": ["host"]
   },
 
   "capabilities": {

@@ -167,7 +167,8 @@ async def find_awair_with_retry(
     return {}
 
 async def load_config():
-    with open("config.json", "r") as f:
+    config_path = Path(__file__).parent.parent / "config.json"
+    with config_path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 async def call_core_for_devices(container_id: str):

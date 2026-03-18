@@ -1,14 +1,15 @@
-
-
-
 import json
 import multiprocessing
 from pathlib import Path
 import aiofiles
 from fastapi import FastAPI
 from com_piphi_await_element.contract.health.router import router as health_router
+from com_piphi_await_element.contract.command.router import router as command_router
+from com_piphi_await_element.contract.entities.router import router as entities_router
+from com_piphi_await_element.contract.events.router import router as events_router
 import uvicorn
 from com_piphi_await_element.contract.discovery.discovery import  discovery_router
+from com_piphi_await_element.contract.state.router import router as state_router
 from com_piphi_await_element.contract.ui_schema.router import router as ui_schema
 from com_piphi_await_element.contract.config.routes import  config_router
 from com_piphi_await_element.lib.lifespan import lifespan
@@ -16,8 +17,11 @@ from com_piphi_await_element.lib.lifespan import lifespan
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(health_router)
-
+app.include_router(command_router)
+app.include_router(entities_router)
+app.include_router(events_router)
 app.include_router(discovery_router)
+app.include_router(state_router)
 
 app.include_router(router=ui_schema)
 

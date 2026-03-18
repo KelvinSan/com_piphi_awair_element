@@ -1,9 +1,9 @@
-
 from fastapi import APIRouter
 
 
 router = APIRouter(tags=['ui_schema'])
 
+@router.get('/ui-config')
 @router.get('/ui')
 async def get_ui_schema():
     schema = {

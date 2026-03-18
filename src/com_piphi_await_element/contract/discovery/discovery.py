@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from com_piphi_await_element.lib.lifespan import config
 
-discovery_router = APIRouter(prefix="/discovery",tags=['discovery'])
+discovery_router = APIRouter(tags=['discovery'])
 
-@discovery_router.get('')
+@discovery_router.get('/discover')
+@discovery_router.get('/discovery')
 async def get_discovered_devices():
     discovered_devices = []
     for key, item in config.items():
