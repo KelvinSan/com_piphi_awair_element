@@ -4,7 +4,12 @@ import random
 import traceback
 from fastapi import APIRouter, HTTPException
 import httpx
-from com_piphi_await_element.lib.schemas import AwairElement, DeconfigureConfig
+from com_piphi_await_element.lib.schemas import (
+    AwairElement,
+    DeconfigureConfig,
+    RuntimeConfigSnapshot,
+    RuntimeConfigSyncResponse,
+)
 from com_piphi_await_element.lib.store import devices, latest_states, update_device_state
 
 config_router = APIRouter(tags=['config'])
@@ -91,15 +96,23 @@ async def fetch_awair_data(ip_address: str, device_id: str, container_id: str | 
             traceback.print_exc()
         await asyncio.sleep(10)
 
-@config_router.post('/config')
-async def config(payload: AwairElement):
-    existing_poll = devices.get(payload.id)
+
+async def remove_device_config(device_id: str) -> bool:
+    existing_poll = devices.get(device_id)
     if existing_poll and existing_poll.get("task") and not existing_poll["task"].done():
         existing_poll["task"].cancel()
         try:
             await existing_poll["task"]
         except asyncio.CancelledError:
             pass
+    removed = device_id in devices
+    devices.pop(device_id, None)
+    latest_states.pop(device_id, None)
+    return removed
+
+
+async def apply_device_config(payload: AwairElement) -> dict:
+    await remove_device_config(payload.id)
     task = asyncio.create_task(fetch_awair_data(payload.device_ip, payload.id, payload.container_id))
     devices[payload.id] = {
         "task": task,
@@ -118,22 +131,61 @@ async def config(payload: AwairElement):
         "device_ip": payload.device_ip,
     }
 
+
+async def apply_runtime_config_snapshot(
+    payload: RuntimeConfigSnapshot,
+) -> RuntimeConfigSyncResponse:
+    incoming_ids = {config.id for config in payload.configs}
+    active_ids = list(devices.keys())
+    removed_ids: list[str] = []
+    applied_ids: list[str] = []
+
+    for device_id in active_ids:
+        if device_id not in incoming_ids:
+            removed = await remove_device_config(device_id)
+            if removed:
+                removed_ids.append(device_id)
+
+    for config in payload.configs:
+        await apply_device_config(config)
+        applied_ids.append(config.id)
+
+    return RuntimeConfigSyncResponse(
+        status="synced",
+        container_id=payload.container_id,
+        reason=payload.reason,
+        generation=payload.generation,
+        applied=applied_ids,
+        removed=removed_ids,
+        active_config_ids=list(devices.keys()),
+        metadata={
+            "applied_count": len(applied_ids),
+            "removed_count": len(removed_ids),
+        },
+    )
+
+@config_router.post('/config')
+async def config(payload: AwairElement):
+    return await apply_device_config(payload)
+
+
+@config_router.post('/configs/sync', response_model=RuntimeConfigSyncResponse)
+async def sync_configs(payload: RuntimeConfigSnapshot):
+    return await apply_runtime_config_snapshot(payload)
+
+
+@config_router.post('/config/sync', response_model=RuntimeConfigSyncResponse)
+async def sync_config(payload: RuntimeConfigSnapshot):
+    return await apply_runtime_config_snapshot(payload)
+
 @config_router.post('/deconfigure')
 async def deconfigure_device(payload: DeconfigureConfig):
     device_id = payload.config.get("id")
     if device_id is None:
         raise HTTPException(status_code=400, detail="Missing config id")
-    existing_poll = devices.get(device_id)
-    if existing_poll and existing_poll.get("task") and not existing_poll["task"].done():
-        existing_poll["task"].cancel()
-        try:
-            await existing_poll["task"]
-        except asyncio.CancelledError:
-            pass
-    elif not existing_poll:
+    removed = await remove_device_config(device_id)
+    if not removed:
         print("No task found for device", device_id)
-    devices.pop(device_id, None)
-    latest_states.pop(device_id, None)
     return {
         "status": "deconfigured",
         "device_id": device_id,

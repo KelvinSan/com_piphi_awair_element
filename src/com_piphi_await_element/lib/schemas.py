@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
+from typing import Any
 
 
 class AwairElement(BaseModel):
@@ -11,6 +12,26 @@ class AwairElement(BaseModel):
 
 class DeconfigureConfig(BaseModel):
     config: dict
+
+
+class RuntimeConfigSnapshot(BaseModel):
+    container_id: str
+    integration_id: str | None = None
+    driver_pid: int | None = None
+    reason: str | None = None
+    generation: int | None = None
+    configs: list[AwairElement] = Field(default_factory=list)
+
+
+class RuntimeConfigSyncResponse(BaseModel):
+    status: str
+    container_id: str
+    reason: str | None = None
+    generation: int | None = None
+    applied: list[str] = Field(default_factory=list)
+    removed: list[str] = Field(default_factory=list)
+    active_config_ids: list[str] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class CommandRequest(BaseModel):

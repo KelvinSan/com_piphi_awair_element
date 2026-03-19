@@ -7,6 +7,8 @@ from fastapi import FastAPI
 from zeroconf import ServiceListener, DNSQuestion, DNSQuestionType
 from zeroconf.asyncio import AsyncZeroconf, AsyncServiceBrowser, AsyncServiceInfo
 from httpx import AsyncClient
+from com_piphi_await_element.contract.config.routes import apply_runtime_config_snapshot
+from com_piphi_await_element.lib.schemas import AwairElement, RuntimeConfigSnapshot
 config = {}
 
 
@@ -174,11 +176,18 @@ async def load_config():
 async def call_core_for_devices(container_id: str):
     async with AsyncClient() as client:
         response = await client.get("http://127.0.0.1:31419/api/v2/integrations/config/fetch/all/by/container", params={"container_id": container_id})
-        data  = response.json()
+        response.raise_for_status()
+        data = response.json()
         if len(data) == 0:
             print("No device has been configured for this container")
-            
-        # TODO: Handle case where there are multiple devices, start polling on start up
+            return
+
+        snapshot = RuntimeConfigSnapshot(
+            container_id=container_id,
+            reason="startup_rehydrate",
+            configs=[AwairElement(**item["config_data"], container_id=container_id) for item in data],
+        )
+        await apply_runtime_config_snapshot(snapshot)
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
