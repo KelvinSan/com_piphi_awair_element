@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import json
+import os
 from pathlib import Path
 from typing import Dict, Optional
 from fastapi import FastAPI
@@ -9,9 +10,6 @@ from zeroconf.asyncio import AsyncZeroconf, AsyncServiceBrowser, AsyncServiceInf
 from httpx import AsyncClient
 from com_piphi_await_element.contract.config.routes import apply_runtime_config_snapshot
 from com_piphi_await_element.lib.schemas import AwairElement, RuntimeConfigSnapshot
-config = {}
-
-
 config = {}
 
 
@@ -173,9 +171,19 @@ async def load_config():
     with config_path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
-async def call_core_for_devices(container_id: str):
+async def call_core_for_devices(container_id: str, internal_token: str | None = None):
+    if not internal_token:
+        print("Missing internal auth token; skipping startup config rehydrate")
+        return
     async with AsyncClient() as client:
-        response = await client.get("http://127.0.0.1:31419/api/v2/integrations/config/fetch/all/by/container", params={"container_id": container_id})
+        response = await client.get(
+            "http://127.0.0.1:31419/api/v2/integrations/config/fetch/all/by/container/internal",
+            params={"container_id": container_id},
+            headers={
+                "X-Container-Id": container_id,
+                "X-PiPhi-Integration-Token": internal_token,
+            },
+        )
         response.raise_for_status()
         data = response.json()
         if len(data) == 0:
@@ -209,7 +217,14 @@ async def lifespan(app: FastAPI):
     if awair_devices:
         print(f"✓ Found {len(awair_devices)} Awair device(s) on startup")
     config_file = await load_config()
-    await call_core_for_devices(container_id=config_file["container_id"])
+    internal_token = (
+        os.getenv("PIPHI_INTEGRATION_INTERNAL_TOKEN")
+        or config_file.get("internal_token")
+    )
+    await call_core_for_devices(
+        container_id=config_file["container_id"],
+        internal_token=internal_token,
+    )
     yield
 
     print("🛑 Shutting down Awair discovery...")

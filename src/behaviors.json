@@ -1,0 +1,152 @@
+{
+  "devices": [
+    {
+      "id": "awair_element",
+      "name": "Awair Element",
+      "description": "Indoor air quality monitor",
+      "capabilities": ["temperature", "humidity", "co2", "refresh"],
+      "intents": [
+        {
+          "id": "monitor_air_quality",
+          "label": "Monitor air quality",
+          "description": "Track indoor air quality continuously"
+        },
+        {
+          "id": "protect_sleep",
+          "label": "Protect sleep environment",
+          "description": "Apply stricter night-time thresholds"
+        }
+      ],
+      "conditions": [
+        {
+          "id": "co2_above",
+          "label": "CO2 above",
+          "type": "number",
+          "params": [
+            {
+              "name": "ppm",
+              "label": "CO2 threshold (ppm)",
+              "type": "number",
+              "min": 400,
+              "max": 5000,
+              "default": 1000,
+              "step": 50,
+              "unit": "ppm",
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "humidity_outside_range",
+          "label": "Humidity outside range",
+          "type": "number",
+          "params": [
+            {
+              "name": "min_percent",
+              "label": "Minimum humidity (%)",
+              "type": "number",
+              "min": 20,
+              "max": 80,
+              "default": 35,
+              "step": 1,
+              "unit": "%",
+              "required": true
+            },
+            {
+              "name": "max_percent",
+              "label": "Maximum humidity (%)",
+              "type": "number",
+              "min": 20,
+              "max": 80,
+              "default": 55,
+              "step": 1,
+              "unit": "%",
+              "required": true
+            }
+          ]
+        },
+        {
+          "id": "temperature_above",
+          "label": "Temperature above",
+          "type": "number",
+          "params": [
+            {
+              "name": "celsius",
+              "label": "Temperature threshold",
+              "type": "number",
+              "min": 10,
+              "max": 35,
+              "default": 27,
+              "step": 0.5,
+              "unit": "°C",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "id": "refresh_readings",
+          "label": "Refresh readings",
+          "description": "Request an immediate reading refresh"
+        },
+        {
+          "id": "notify",
+          "label": "Send notification",
+          "params": [
+            {
+              "name": "message",
+              "label": "Notification message",
+              "type": "text",
+              "default": "Air quality threshold reached",
+              "required": true
+            },
+            {
+              "name": "channel",
+              "label": "Delivery channel",
+              "type": "enum",
+              "options": ["in_app", "email", "sms"],
+              "default": "in_app",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "stop": [
+        {
+          "id": "after_duration",
+          "label": "After duration",
+          "type": "duration",
+          "params": [
+            {
+              "name": "duration",
+              "label": "Monitoring window",
+              "type": "duration",
+              "default": "8h",
+              "required": true
+            }
+          ]
+        }
+      ],
+      "manualOverride": [
+        {
+          "id": "continue",
+          "label": "Continue automation"
+        },
+        {
+          "id": "pause",
+          "label": "Pause automation",
+          "params": [
+            {
+              "name": "duration",
+              "label": "Pause duration",
+              "type": "duration",
+              "default": "30m",
+              "required": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

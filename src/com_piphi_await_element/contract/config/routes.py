@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import os
 import random
 import traceback
 from fastapi import APIRouter, HTTPException
@@ -31,11 +32,15 @@ async def send_telemetry_to_core(telemetry_data: dict, device_id: str, container
             },
         }
         payload["metrics"]["power_on"] = random.choice(["on", "off"])
+        internal_token = os.getenv("PIPHI_INTEGRATION_INTERNAL_TOKEN")
+        headers = {"X-Container-Id": container_id}
+        if internal_token:
+            headers["X-PiPhi-Integration-Token"] = internal_token
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url="http://127.0.0.1:31419/api/v2/integrations/telemetry",
                 json=payload,
-                headers={"X-Container-Id": container_id},
+                headers=headers,
             )
             response.raise_for_status()
     except httpx.RequestError as e:
