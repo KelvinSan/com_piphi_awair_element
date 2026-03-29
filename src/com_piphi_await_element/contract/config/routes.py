@@ -2,12 +2,19 @@ import asyncio
 import datetime
 import os
 import random
+import time
 from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, Request
 import httpx
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
 
-from com_piphi_await_element.lib.logging import logger
+from com_piphi_await_element.lib.logging import log_event
 from com_piphi_await_element.lib.schemas import (
     AwairElement,
     DeconfigureConfig,
@@ -25,10 +32,22 @@ from com_piphi_await_element.lib.store import (
 config_router = APIRouter(tags=["config"])
 current_generation: int | None = None
 
+CORE_BASE_URL = "http://127.0.0.1:31419"
+CORE_HEALTH_URL = f"{CORE_BASE_URL}/api/v2/health"
 TELEMETRY_URL = "http://127.0.0.1:31419/api/v2/integrations/telemetry"
 AWAIR_LATEST_AIR_DATA_PATH = "/air-data/latest"
 POLL_INTERVAL_SECONDS = 10
 INTERNAL_TOKEN_ENV_NAME = "PIPHI_INTEGRATION_INTERNAL_TOKEN"
+TELEMETRY_SEND_TIMEOUT_SECONDS = 4.0
+TELEMETRY_HEALTH_TIMEOUT_SECONDS = 10.0
+TELEMETRY_MAX_RETRIES = 4
+TELEMETRY_RETRY_BASE_SECONDS = 0.5
+TELEMETRY_RETRY_MAX_SECONDS = 8.0
+HEALTH_CACHE_SECONDS = 3.0
+RETRYABLE_TELEMETRY_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+
+_last_core_health_check_at = 0.0
+_last_core_health_ok = True
 
 
 def _mask_token(token: str | None) -> str:
@@ -52,11 +71,11 @@ def _sync_runtime_auth_from_request(
         internal_token=header_token,
     )
 
-    logger.info(
-        "runtime_internal_auth "
-        f"header_container_id={header_container_id or 'missing'} "
-        f"payload_container_id={payload_container_id or 'missing'} "
-        f"token={_mask_token(header_token)}"
+    log_event(
+        "runtime_internal_auth",
+        header_container_id=header_container_id or "missing",
+        payload_container_id=payload_container_id or "missing",
+        token=_mask_token(header_token),
     )
 
 
@@ -109,6 +128,60 @@ def _extract_awair_metrics(awair_response: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _short_error_message(exc: Exception) -> str:
+    message = str(exc).strip()
+    return message or exc.__class__.__name__
+
+
+class RetryableTelemetryError(Exception):
+    pass
+
+
+@retry(
+    reraise=True,
+    retry=retry_if_exception_type((httpx.RequestError, RetryableTelemetryError)),
+    stop=stop_after_attempt(TELEMETRY_MAX_RETRIES + 1),
+    wait=wait_exponential_jitter(
+        initial=TELEMETRY_RETRY_BASE_SECONDS,
+        max=TELEMETRY_RETRY_MAX_SECONDS,
+    ),
+)
+async def _post_telemetry_with_retry(
+    client: httpx.AsyncClient,
+    payload: Dict[str, Any],
+    headers: Dict[str, str],
+) -> httpx.Response:
+    response = await client.post(
+        url=TELEMETRY_URL,
+        json=payload,
+        headers=headers,
+    )
+    if response.status_code in RETRYABLE_TELEMETRY_STATUS_CODES:
+        raise RetryableTelemetryError(f"retryable_status={response.status_code}")
+    return response
+
+
+async def _is_core_healthy(client: httpx.AsyncClient) -> bool:
+    global _last_core_health_check_at
+    global _last_core_health_ok
+
+    now = time.monotonic()
+    if now - _last_core_health_check_at <= HEALTH_CACHE_SECONDS:
+        return _last_core_health_ok
+
+    try:
+        response = await client.get(
+            CORE_HEALTH_URL,
+            timeout=TELEMETRY_HEALTH_TIMEOUT_SECONDS,
+        )
+        _last_core_health_ok = response.status_code < 500
+    except httpx.RequestError:
+        _last_core_health_ok = False
+
+    _last_core_health_check_at = now
+    return _last_core_health_ok
+
+
 async def send_telemetry_to_core(
     telemetry_data: Dict[str, Any],
     device_id: str,
@@ -117,29 +190,54 @@ async def send_telemetry_to_core(
     try:
         resolved_container_id, resolved_internal_token = _resolve_runtime_auth(container_id)
         if not resolved_container_id:
-            logger.warning("telemetry_send_skipped reason=missing_container_id")
+            log_event("telemetry_send_skipped", level="warning", reason="missing_container_id")
             return
 
         headers = {"X-Container-Id": resolved_container_id}
         if resolved_internal_token:
             headers["X-PiPhi-Integration-Token"] = resolved_internal_token
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url=TELEMETRY_URL,
-                json=_build_telemetry_payload(telemetry_data, device_id),
-                headers=headers,
-            )
-            response.raise_for_status()
-    except httpx.RequestError as exc:
-        logger.error(f"telemetry_send_request_error error={exc}")
-    except httpx.HTTPStatusError as exc:
-        logger.error(
-            "telemetry_send_http_error "
-            f"status={exc.response.status_code} body={exc.response.text}"
-        )
+        payload = _build_telemetry_payload(telemetry_data, device_id)
+        timeout = httpx.Timeout(TELEMETRY_SEND_TIMEOUT_SECONDS)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            is_healthy = await _is_core_healthy(client)
+            if not is_healthy:
+                log_event("telemetry_send_deferred", level="warning", reason="core_health_unavailable")
+                return
+
+            try:
+                response = await _post_telemetry_with_retry(
+                    client=client,
+                    payload=payload,
+                    headers=headers,
+                )
+            except httpx.RequestError as exc:
+                log_event(
+                    "telemetry_send_request_error",
+                    level="warning",
+                    device_id=device_id,
+                    error=_short_error_message(exc),
+                )
+                return
+            except RetryableTelemetryError as exc:
+                log_event(
+                    "telemetry_send_retry_exhausted",
+                    level="warning",
+                    device_id=device_id,
+                    error=_short_error_message(exc),
+                )
+                return
+
+            if response.status_code >= 400:
+                log_event(
+                    "telemetry_send_http_error",
+                    level="warning",
+                    device_id=device_id,
+                    status=response.status_code,
+                )
+            return
     except Exception:
-        logger.exception("telemetry_send_unexpected_error")
+        log_event("telemetry_send_unexpected_error", level="error", exc_info=True)
 
 
 async def fetch_awair_state(
@@ -188,15 +286,18 @@ async def fetch_awair_data(
                 device_id=device_id,
                 container_id=container_id,
             )
-            logger.info(f"telemetry_sent device_id={device_id} ip={ip_address}")
+            log_event("telemetry_sent", device_id=device_id, ip=ip_address)
         except httpx.RequestError as exc:
-            logger.warning(f"awair_poll_request_error device_id={device_id} error={exc}")
+            log_event("awair_poll_request_error", level="warning", device_id=device_id, error=exc)
         except httpx.HTTPStatusError as exc:
-            logger.warning(
-                f"awair_poll_http_error device_id={device_id} status={exc.response.status_code}"
+            log_event(
+                "awair_poll_http_error",
+                level="warning",
+                device_id=device_id,
+                status=exc.response.status_code,
             )
         except Exception:
-            logger.exception(f"awair_poll_unexpected_error device_id={device_id}")
+            log_event("awair_poll_unexpected_error", level="error", device_id=device_id, exc_info=True)
 
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
 
@@ -238,7 +339,7 @@ async def apply_device_config(payload: AwairElement) -> Dict[str, Any]:
     try:
         await trigger_refresh(payload.id)
     except httpx.HTTPError:
-        logger.warning(f"awair_initial_refresh_failed device_id={payload.id}")
+        log_event("awair_initial_refresh_failed", level="warning", device_id=payload.id)
 
     return {
         "status": "configured",
@@ -333,7 +434,7 @@ async def deconfigure_device(payload: DeconfigureConfig):
 
     removed = await remove_device_config(device_id)
     if not removed:
-        logger.info(f"deconfigure_noop device_id={device_id}")
+        log_event("deconfigure_noop", device_id=device_id)
 
     return {
         "status": "deconfigured",

@@ -3,6 +3,7 @@ import multiprocessing
 from pathlib import Path
 import aiofiles
 from fastapi import FastAPI
+from com_piphi_await_element.lib.logging import configure_logging
 from com_piphi_await_element.contract.health.router import router as health_router
 from com_piphi_await_element.contract.command.router import router as command_router
 from com_piphi_await_element.contract.entities.router import router as entities_router
@@ -13,6 +14,8 @@ from com_piphi_await_element.contract.state.router import router as state_router
 from com_piphi_await_element.contract.ui_schema.router import router as ui_schema
 from com_piphi_await_element.contract.config.routes import  config_router
 from com_piphi_await_element.lib.lifespan import lifespan
+
+configure_logging()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -34,11 +37,5 @@ async def display_manifest():
         return json.loads(await f.read())
 
 if __name__ == "__main__":
-    config = {
-        "version": 1,
-        "formatters": {"default": {"format": "%(asctime)s [%(levelname)s] %(message)s"}},
-        "handlers": {"default": {"class": "logging.StreamHandler", "formatter": "default"}},
-        "root": {"handlers": ["default"], "level": "INFO"},
-    }
     multiprocessing.freeze_support()
-    uvicorn.run(app, host="0.0.0.0", port=3665, log_config=config)
+    uvicorn.run(app, host="0.0.0.0", port=3665, log_config=None)
