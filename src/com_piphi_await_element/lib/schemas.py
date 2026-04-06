@@ -1,11 +1,12 @@
 from pydantic import BaseModel, ConfigDict, Field
+from piphi_runtime_kit_python import RuntimeConfig
 from typing import Any
 
 
-class AwairElement(BaseModel):
-    id: str
+class AwairElement(RuntimeConfig):
     device_ip: str
     container_id: str | None = None
+    integration_id: str | None = None
     device_mac: str | None = None
     model_config = ConfigDict(extra="allow")
 

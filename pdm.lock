@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d820dd8ac7d9eead95b5a395992d311bb0af879b54de24f14674ecb2c5d60a56"
+content_hash = "sha256:fec9c8c568852fe89deebb322f84ac247fac6c2e8a48f201840ab8c889e1e070"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -399,6 +399,18 @@ marker = "sys_platform == \"win32\""
 files = [
     {file = "pefile-2023.2.7-py3-none-any.whl", hash = "sha256:da185cd2af68c08a6cd4481f7325ed600a88f6a813bad9dea07ab3ef73d8d8d6"},
     {file = "pefile-2023.2.7.tar.gz", hash = "sha256:82e6114004b3d6911c77c3953e3838654b04511b8b66e8583db70c65998017dc"},
+]
+
+[[package]]
+name = "piphi-runtime-kit-python"
+version = "0.3.0"
+requires_python = ">=3.11"
+path = "../piphi-runtime-kit-python"
+summary = "PiPhi Network runtime integration helpers"
+groups = ["default"]
+dependencies = [
+    "httpx<1.0,>=0.27",
+    "pydantic<3.0,>=2.8",
 ]
 
 [[package]]

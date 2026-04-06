@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from piphi_runtime_kit_python import build_discovery_response
 from com_piphi_await_element.lib.lifespan import config
 
 discovery_router = APIRouter(tags=['discovery'])
@@ -10,6 +11,4 @@ async def get_discovered_devices():
     for key, item in config.items():
         if "awair".casefold() in str(key).casefold():
             discovered_devices.append({"make":"Awair","model":"Element","name":key,"device_ip":item['addresses'][0],"meta":item['meta'],"port":item['port']})
-    return {
-        "devices":discovered_devices
-        }
+    return build_discovery_response(discovered_devices)

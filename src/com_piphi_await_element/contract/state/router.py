@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from com_piphi_await_element.contract.config.routes import trigger_refresh
-from com_piphi_await_element.lib.store import devices, get_primary_device, latest_states
+from com_piphi_await_element.lib.store import get_primary_device, registry
 
 
 router = APIRouter(tags=['state'])
@@ -14,9 +14,9 @@ async def get_state(device_id: str | None = Query(default=None)):
         if primary_device is None:
             raise HTTPException(status_code=404, detail='No configured device found')
         resolved_device_id = primary_device['device_id']
-    if resolved_device_id not in latest_states and resolved_device_id in devices:
+    if resolved_device_id not in registry.state_snapshots and registry.get(resolved_device_id) is not None:
         await trigger_refresh(resolved_device_id)
-    latest_state = latest_states.get(resolved_device_id)
+    latest_state = registry.state_snapshots.get(resolved_device_id)
     if latest_state is None:
         raise HTTPException(status_code=404, detail=f"No state available for device '{resolved_device_id}'")
     return latest_state

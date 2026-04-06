@@ -1,27 +1,25 @@
 import asyncio
 import contextlib
-import os
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI
-from httpx import AsyncClient
+from piphi_runtime_kit_python import build_runtime_auth_headers, runtime_lifespan
 from zeroconf import DNSQuestion, DNSQuestionType, ServiceListener
 from zeroconf.asyncio import AsyncServiceBrowser, AsyncServiceInfo, AsyncZeroconf
 
 from com_piphi_await_element.contract.config.routes import (
-    apply_device_config,
     apply_runtime_config_snapshot,
 )
 from com_piphi_await_element.lib.logging import log_event
 from com_piphi_await_element.lib.schemas import AwairElement, RuntimeConfigSnapshot
-from com_piphi_await_element.lib.store import set_runtime_auth_context
+from com_piphi_await_element.lib.store import get_runtime_context
 
 DISCOVERY_SERVICE_TYPES = ["_http._tcp.local.", "_awair._tcp.local.", "_hap._tcp.local."]
 CORE_BASE_URL = "http://127.0.0.1:31419"
-RUNTIME_CONTAINER_ID_ENV_NAME = "PIPHI_CONTAINER_ID"
-RUNTIME_INTERNAL_TOKEN_ENV_NAME = "PIPHI_INTEGRATION_INTERNAL_TOKEN"
+CORE_REQUEST_TIMEOUT_SECONDS = 10.0
 
 config: Dict[str, Dict[str, Any]] = {}
+runtime_context = get_runtime_context()
 
 
 class ZeroConfGlobalListener(ServiceListener):
@@ -162,72 +160,43 @@ async def find_awair_with_retry(
     return {}
 
 
-async def bootstrap_devices_from_discovery(container_id: str | None = None) -> None:
-    awair_devices = {name: info for name, info in config.items() if "awair" in name.lower()}
-    if not awair_devices:
-        awair_devices = await discover_awair_actively(timeout=3)
+async def startup_sync(runtime, client) -> None:
+    container_id = runtime.auth.container_id
+    internal_token = runtime.auth.internal_token
 
-    if not awair_devices:
-        log_event("awair_local_bootstrap_no_devices")
-        return
-
-    applied = 0
-    for info in awair_devices.values():
-        addresses = info.get("addresses") or []
-        if not addresses:
-            continue
-
-        device_ip = str(addresses[0]).strip()
-        if not device_ip:
-            continue
-
-        meta = info.get("meta") or {}
-        device_mac = meta.get("mac") or meta.get("id") or meta.get("serial")
-        device_id = f"awair-{device_ip.replace('.', '-')}"
-
-        await apply_device_config(
-            AwairElement(
-                id=device_id,
-                device_ip=device_ip,
-                container_id=container_id or None,
-                device_mac=device_mac,
-            )
-        )
-        log_event(
-            "awair_bootstrap_applied",
-            device_id=device_id,
-            ip=device_ip,
-            container_id=container_id or "none",
-        )
-        applied += 1
-
-    log_event("awair_local_bootstrap_complete", applied=applied)
-
-
-async def call_core_for_devices(container_id: str, internal_token: str) -> None:
-    async with AsyncClient() as client:
+    if container_id and internal_token:
         response = await client.get(
             f"{CORE_BASE_URL}/api/v2/integrations/config/fetch/all/by/container/internal",
             params={"container_id": container_id},
-            headers={
-                "X-Container-Id": container_id,
-                "X-PiPhi-Integration-Token": internal_token,
-            },
+            headers=build_runtime_auth_headers(
+                container_id=container_id,
+                internal_token=internal_token,
+            ),
+            timeout=CORE_REQUEST_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
 
-    data = response.json()
-    if not data:
+        data = response.json()
+        if data:
+            snapshot = RuntimeConfigSnapshot(
+                container_id=container_id,
+                reason="startup_rehydrate",
+                configs=[
+                    AwairElement(
+                        **item["config_data"],
+                        container_id=container_id,
+                    )
+                    for item in data
+                ],
+            )
+            await apply_runtime_config_snapshot(snapshot)
+            log_event("awair_startup_rehydrate_complete", loaded=len(data))
+            return
+
         log_event("awair_startup_rehydrate_no_configs")
         return
 
-    snapshot = RuntimeConfigSnapshot(
-        container_id=container_id,
-        reason="startup_rehydrate",
-        configs=[AwairElement(**item["config_data"], container_id=container_id) for item in data],
-    )
-    await apply_runtime_config_snapshot(snapshot)
-    log_event("awair_startup_rehydrate_complete", loaded=len(data))
+    log_event("awair_startup_rehydrate_skipped", reason="missing_runtime_auth")
 
 
 @contextlib.asynccontextmanager
@@ -247,30 +216,15 @@ async def lifespan(app: FastAPI):
     if awair_devices:
         log_event("awair_startup_discovery_cached", count=len(awair_devices))
 
-    container_id = (os.getenv(RUNTIME_CONTAINER_ID_ENV_NAME) or "").strip()
-    internal_token = (os.getenv(RUNTIME_INTERNAL_TOKEN_ENV_NAME) or "").strip()
-
-    set_runtime_auth_context(
-        container_id=container_id,
-        internal_token=internal_token,
-    )
-
-    if internal_token and container_id:
-        await call_core_for_devices(
-            container_id=container_id,
-            internal_token=internal_token,
-        )
-        await bootstrap_devices_from_discovery(container_id=container_id)
-    else:
-        log_event(
-            "awair_startup_missing_runtime_credentials",
-            level="warning",
-            skipping_core_rehydrate_and_local_bootstrap=True,
-        )
-
-    yield
-
-    log_event("awair_lifespan_shutdown")
-    for browser in browsers:
-        await browser.async_cancel()
-    await aiozc.async_close()
+    async with runtime_lifespan(
+        runtime_context,
+        on_startup=startup_sync,
+        core_client_timeout_seconds=CORE_REQUEST_TIMEOUT_SECONDS,
+    ):
+        try:
+            yield
+        finally:
+            for browser in browsers:
+                await browser.async_cancel()
+            await aiozc.async_close()
+            log_event("awair_lifespan_shutdown")
