@@ -269,7 +269,7 @@ async def apply_device_config(payload: AwairElement) -> Dict[str, Any]:
     )
     registry.set(payload.id, {
         "task": task,
-        "config_id": payload.id,
+        "config_id": payload.config_id or payload.id,
         "container_id": resolved_container_id,
         "device_id": payload.id,
         "device_ip": payload.device_ip,
@@ -311,7 +311,7 @@ async def apply_device_config(payload: AwairElement) -> Dict[str, Any]:
     )
 
     return build_config_apply_response(
-        config_id=payload.id,
+        config_id=payload.config_id or payload.id,
         container_id=resolved_container_id,
         metadata={"device_ip": payload.device_ip},
     ).model_dump()

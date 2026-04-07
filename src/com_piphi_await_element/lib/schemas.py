@@ -4,6 +4,7 @@ from typing import Any
 
 
 class AwairElement(RuntimeConfig):
+    config_id: str | None = None
     device_ip: str
     container_id: str | None = None
     integration_id: str | None = None
