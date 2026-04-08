@@ -13,3 +13,9 @@ license = {text = "MIT"}
 
 [tool.pdm]
 distribution = false
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "piphi-runtime-testkit-python @ file:///${PROJECT_ROOT}/../piphi-runtime-testkit-python",
+]
