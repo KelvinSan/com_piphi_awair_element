@@ -1,1 +1,79 @@
 # com.piphi.awair_element
+
+PiPhi integration for Awair Element devices over the local network.
+
+This runtime uses the published Python runtime kit and exposes the standard
+PiPhi integration contract for discovery, config, state, telemetry, events, and
+UI config.
+
+## What this integration does
+
+- discovers Awair Element devices on the local network
+- configures devices by host identity
+- exposes PiPhi contract routes for health, discovery, state, entities, commands, and events
+- publishes telemetry back to PiPhi Core through `piphi-runtime-kit-python`
+- supports config snapshot rehydrate through `/configs/sync`
+
+## Runtime SDK and testkit
+
+- runtime SDK: `piphi-runtime-kit-python==0.3.1`
+- local test helper during development: `piphi-runtime-testkit-python`
+
+The SDK is now installed from PyPI. The local testkit path dependency is only
+used for repo development and test coverage.
+
+## Local development
+
+Install dependencies:
+
+```bash
+pdm install -G dev
+```
+
+Run the runtime:
+
+```bash
+pdm run python -m com_piphi_await_element.app
+```
+
+Run tests:
+
+```bash
+pdm run pytest -q
+```
+
+The integration API defaults to `http://127.0.0.1:3665`.
+
+## Important routes
+
+- `GET /health`
+- `POST /discover`
+- `GET /entities`
+- `GET /state`
+- `POST /command`
+- `POST /config`
+- `POST /configs/sync`
+- `POST /deconfigure`
+- `GET /ui-config`
+- `GET /events`
+
+## Device model
+
+This integration is focused on Awair Element devices reachable through the
+local API / local network path. The configuration identity field in the
+manifest is `host`, which keeps config matching straightforward when the device
+is rediscovered later.
+
+## Project layout
+
+- `src/manifest.json` integration manifest
+- `src/com_piphi_await_element/app.py` FastAPI entrypoint
+- `src/com_piphi_await_element/contract/` PiPhi contract routes
+- `src/com_piphi_await_element/lib/` Awair-specific helpers and schemas
+- `tests/` integration tests using the Python testkit
+
+## Notes
+
+- The runtime follows the standard PiPhi Python integration contract.
+- Config, state, and event flows are covered by testkit-backed tests in this repo.
+- Example IDs, hosts, and tokens in development logs or tests should be treated as placeholders.
