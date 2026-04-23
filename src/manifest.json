@@ -2,7 +2,7 @@
   "manifest_version": "1.0",
   "id": "awair-element-local-api",
   "name": "Awair Element (Local API)",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Integration for Awair Element devices over the local network",
 
   "maintainer": {
