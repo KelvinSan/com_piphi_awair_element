@@ -2,46 +2,67 @@
   "manifest_version": "1.0",
   "id": "awair-element-local-api",
   "name": "Awair Element (Local API)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Integration for Awair Element devices over the local network",
-
   "maintainer": {
     "name": "PiPhi Network",
     "website": "https://piphi.io",
     "support_email": "support@piphi.io"
   },
-
-  "platforms": ["linux", "windows", "macos"],
-
+  "platforms": [
+    "linux",
+    "windows",
+    "macos"
+  ],
   "runtime": {
     "linux": {
       "type": "container",
       "container": {
-        "image": "piphinetwork/awair-element",
-        "ports": [{ "container": 3665, "host": 3665 }],
+        "image": "piphinetwork/awair-element:0.1.1",
+        "ports": [
+          {
+            "container": 3665,
+            "host": 3665
+          }
+        ],
         "environment": {
           "LOG_LEVEL": "info"
         },
-        "volumes": [{ "host": "/data/awair", "container": "/app/data", "mode": "rw" }],
+        "volumes": [
+          {
+            "host": "/data/awair",
+            "container": "/app/data",
+            "mode": "rw"
+          }
+        ],
         "restart_policy": {
           "name": "unless-stopped",
           "maximum_retry_count": 0
         }
       },
-      "discovery": { "method": "direct" }
+      "discovery": {
+        "method": "direct"
+      }
     },
     "windows": {
       "type": "proxy",
-      "proxy": { "port": 3665 },
-      "discovery": { "method": "proxy" }
+      "proxy": {
+        "port": 3665
+      },
+      "discovery": {
+        "method": "proxy"
+      }
     },
     "macos": {
       "type": "proxy",
-      "proxy": { "port": 3665 },
-      "discovery": { "method": "proxy" }
+      "proxy": {
+        "port": 3665
+      },
+      "discovery": {
+        "method": "proxy"
+      }
     }
   },
-
   "api": {
     "base_url": "http://127.0.0.1:3665",
     "endpoints": {
@@ -57,23 +78,26 @@
       "events": "/events"
     }
   },
-
   "config": {
     "source": "endpoint",
     "endpoint": "/ui-config",
     "required": true
   },
-
   "identity": {
-    "fields": ["host"]
+    "fields": [
+      "host"
+    ]
   },
-
   "capabilities": {
     "temperature": {
       "kind": "sensor",
-      "unit": "°C",
+      "unit": "\u00b0C",
       "dashboard": {
-        "allowed_widgets": ["stat", "line_chart", "gauge"],
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
         "default_widget": "stat"
       }
     },
@@ -81,7 +105,11 @@
       "kind": "sensor",
       "unit": "%",
       "dashboard": {
-        "allowed_widgets": ["stat", "line_chart", "gauge"],
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
         "default_widget": "gauge"
       }
     },
@@ -89,49 +117,60 @@
       "kind": "sensor",
       "unit": "ppm",
       "dashboard": {
-        "allowed_widgets": ["stat", "line_chart", "gauge"],
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
         "default_widget": "stat"
       }
     },
     "refresh": {
       "kind": "action",
       "dashboard": {
-        "allowed_widgets": ["button"],
+        "allowed_widgets": [
+          "button"
+        ],
         "default_widget": "button"
       }
     }
   },
-
   "commands": {
     "refresh": {
       "description": "Force refresh device state",
       "timeout_ms": 5000
     }
   },
-
   "entities": [
     {
       "id": "temperature",
       "name": "Temperature",
-      "capabilities": ["temperature"]
+      "capabilities": [
+        "temperature"
+      ]
     },
     {
       "id": "humidity",
       "name": "Humidity",
-      "capabilities": ["humidity"]
+      "capabilities": [
+        "humidity"
+      ]
     },
     {
       "id": "co2",
-      "name": "CO₂",
-      "capabilities": ["co2"]
+      "name": "CO\u2082",
+      "capabilities": [
+        "co2"
+      ]
     },
     {
       "id": "refresh_action",
       "name": "Refresh",
-      "capabilities": ["refresh"]
+      "capabilities": [
+        "refresh"
+      ]
     }
   ],
-
   "extensions": [
     {
       "id": "rtl433_ingest",

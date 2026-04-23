@@ -1,6 +1,6 @@
 [project]
 name = "com.piphi.await_element"
-version = "0.1.0"
+version = "0.1.1"
 description = "Default template for PDM package"
 authors = [
     {name = "KelvinSan", email = "kelvin.sanyaolu@gmail.com"},
