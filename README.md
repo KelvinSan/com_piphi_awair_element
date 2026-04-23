@@ -16,7 +16,7 @@ UI config.
 
 ## Runtime SDK and testkit
 
-- runtime SDK: `piphi-runtime-kit-python==0.3.1`
+- runtime SDK: `piphi-runtime-kit-python==0.4.2`
 - local test helper during development: `piphi-runtime-testkit-python`
 
 The SDK is now installed from PyPI. The local testkit path dependency is only
