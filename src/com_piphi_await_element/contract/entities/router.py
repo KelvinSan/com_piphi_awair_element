@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-from piphi_runtime_kit_python import build_entities_response
 
 from com_piphi_await_element.lib.manifest import load_manifest
 from com_piphi_await_element.lib.store import registry
@@ -56,8 +55,8 @@ async def get_entities():
             }
         )
 
-    return build_entities_response(
-        entities=entities,
-        capabilities=manifest.get("capabilities", {}),
-        commands=manifest.get("commands", {}),
-    ).model_dump(exclude_none=True)
+    return {
+        "entities": entities,
+        "capabilities": manifest.get("capabilities", {}),
+        "commands": manifest.get("commands", {}),
+    }
