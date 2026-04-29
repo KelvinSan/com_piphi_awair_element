@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:cfde938b10a17e0c331069e966e86cb4c5ed6584debf76b2ce84d0ca40435e07"
+content_hash = "sha256:8b54e5f0fbcbb3e0545baf3873db1756ae5ce00562f38fc02cc5dbe82c53b88b"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -424,15 +424,6 @@ groups = ["default"]
 files = [
     {file = "mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8"},
     {file = "mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"},
-]
-
-[[package]]
-name = "netifaces"
-version = "0.11.0"
-summary = "Portable network interface information."
-groups = ["default"]
-files = [
-    {file = "netifaces-0.11.0.tar.gz", hash = "sha256:043a79146eb2907edf439899f262b3dfe41717d34124298ed281139a8b93ca32"},
 ]
 
 [[package]]
