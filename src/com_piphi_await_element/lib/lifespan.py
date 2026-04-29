@@ -3,7 +3,11 @@ import contextlib
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI
-from piphi_runtime_kit_python import build_runtime_auth_headers, runtime_lifespan
+from piphi_runtime_kit_python import (
+    rehydrate_runtime_configs,
+    resolve_core_base_url,
+    runtime_lifespan,
+)
 from zeroconf import DNSQuestion, DNSQuestionType, ServiceListener
 from zeroconf.asyncio import AsyncServiceBrowser, AsyncServiceInfo, AsyncZeroconf
 
@@ -15,7 +19,7 @@ from com_piphi_await_element.lib.schemas import AwairElement, RuntimeConfigSnaps
 from com_piphi_await_element.lib.store import get_runtime_context
 
 DISCOVERY_SERVICE_TYPES = ["_http._tcp.local.", "_awair._tcp.local.", "_hap._tcp.local."]
-CORE_BASE_URL = "http://127.0.0.1:31419"
+CORE_BASE_URL = resolve_core_base_url("http://127.0.0.1:31419")
 CORE_REQUEST_TIMEOUT_SECONDS = 10.0
 
 config: Dict[str, Dict[str, Any]] = {}
@@ -161,42 +165,48 @@ async def find_awair_with_retry(
 
 
 async def startup_sync(runtime, client) -> None:
-    container_id = runtime.auth.container_id
-    internal_token = runtime.auth.internal_token
+    result = await rehydrate_runtime_configs(
+        runtime_context=runtime,
+        client=client,
+        apply_snapshot=apply_runtime_config_snapshot,
+        config_model=AwairElement,
+        snapshot_model=RuntimeConfigSnapshot,
+        core_base_url=CORE_BASE_URL,
+        timeout_seconds=CORE_REQUEST_TIMEOUT_SECONDS,
+    )
 
-    if container_id and internal_token:
-        response = await client.get(
-            f"{CORE_BASE_URL}/api/v2/integrations/config/fetch/all/by/container/internal",
-            params={"container_id": container_id},
-            headers=build_runtime_auth_headers(
-                container_id=container_id,
-                internal_token=internal_token,
-            ),
-            timeout=CORE_REQUEST_TIMEOUT_SECONDS,
+    if result.snapshot_applied:
+        log_event(
+            "awair_startup_rehydrate_complete",
+            loaded=result.snapshot_config_count,
+            generation=result.snapshot_generation,
+            source="snapshot",
         )
-        response.raise_for_status()
+    else:
+        log_event("awair_startup_snapshot_rehydrate_skipped", reason="missing_snapshot")
 
-        data = response.json()
-        if data:
-            snapshot = RuntimeConfigSnapshot(
-                container_id=container_id,
-                reason="startup_rehydrate",
-                configs=[
-                    AwairElement(
-                        **item["config_data"],
-                        container_id=container_id,
-                    )
-                    for item in data
-                ],
-            )
-            await apply_runtime_config_snapshot(snapshot)
-            log_event("awair_startup_rehydrate_complete", loaded=len(data))
-            return
-
-        log_event("awair_startup_rehydrate_no_configs")
+    if result.core_applied:
+        log_event(
+            "awair_startup_rehydrate_complete",
+            loaded=result.core_config_count,
+            generation=result.core_generation,
+            source="core",
+        )
         return
 
-    log_event("awair_startup_rehydrate_skipped", reason="missing_runtime_auth")
+    if result.core_error:
+        log_event(
+            "awair_startup_core_rehydrate_failed",
+            level="warning",
+            error=result.core_error,
+        )
+    elif result.missing_runtime_auth:
+        log_event("awair_startup_rehydrate_skipped", reason="missing_runtime_auth")
+    elif result.core_attempted:
+        log_event("awair_startup_rehydrate_no_configs", source="core")
+
+    if result.snapshot_applied:
+        log_event("awair_startup_rehydrate_using_snapshot", reason="core_unavailable")
 
 
 @contextlib.asynccontextmanager

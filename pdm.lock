@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:8483a9fb8b97dada98ddfb9312dca65b9ed560ac4a100ba4913206b36a5c7bae"
+content_hash = "sha256:cfde938b10a17e0c331069e966e86cb4c5ed6584debf76b2ce84d0ca40435e07"
 
 [[metadata.targets]]
 requires_python = "==3.12.*"
@@ -189,7 +189,7 @@ files = [
 
 [[package]]
 name = "fastapi-cloud-cli"
-version = "0.17.0"
+version = "0.17.1"
 requires_python = ">=3.10"
 summary = "Deploy and manage FastAPI Cloud apps from the command line 🚀"
 groups = ["default"]
@@ -206,8 +206,8 @@ dependencies = [
     "uvicorn[standard]>=0.17.6",
 ]
 files = [
-    {file = "fastapi_cloud_cli-0.17.0-py3-none-any.whl", hash = "sha256:b496e6998f037f572ab06a233ce257828b4c701488ce500b5c9d725e970a7cb1"},
-    {file = "fastapi_cloud_cli-0.17.0.tar.gz", hash = "sha256:2b6c241b63427023bd1e23b3251f23234aba4b05428b245a050e92db1389823c"},
+    {file = "fastapi_cloud_cli-0.17.1-py3-none-any.whl", hash = "sha256:325e0199bdac7cb86f5df4f4a1d2070054095588088ef7b923a60cec458dcd63"},
+    {file = "fastapi_cloud_cli-0.17.1.tar.gz", hash = "sha256:0baece208fa88063bec46dccb5fb512f3199162092165e57654b44e64adbc44d"},
 ]
 
 [[package]]
@@ -437,13 +437,13 @@ files = [
 
 [[package]]
 name = "packaging"
-version = "26.1"
+version = "26.2"
 requires_python = ">=3.8"
 summary = "Core utilities for Python packages"
 groups = ["default", "dev"]
 files = [
-    {file = "packaging-26.1-py3-none-any.whl", hash = "sha256:5d9c0669c6285e491e0ced2eee587eaf67b670d94a19e94e3984a481aba6802f"},
-    {file = "packaging-26.1.tar.gz", hash = "sha256:f042152b681c4bfac5cae2742a55e103d27ab2ec0f3d88037136b6bfe7c9c5de"},
+    {file = "packaging-26.2-py3-none-any.whl", hash = "sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e"},
+    {file = "packaging-26.2.tar.gz", hash = "sha256:ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661"},
 ]
 
 [[package]]
@@ -460,7 +460,7 @@ files = [
 
 [[package]]
 name = "piphi-runtime-kit-python"
-version = "0.4.2"
+version = "0.4.6"
 requires_python = ">=3.11"
 summary = "PiPhi Network runtime integration helpers"
 groups = ["default"]
@@ -469,13 +469,13 @@ dependencies = [
     "pydantic<3.0,>=2.8",
 ]
 files = [
-    {file = "piphi_runtime_kit_python-0.4.2-py3-none-any.whl", hash = "sha256:5417c762cf484026a4079d4bb1fa6d2887c5770ef09543b659eedad823d42133"},
-    {file = "piphi_runtime_kit_python-0.4.2.tar.gz", hash = "sha256:4697c79ec1837b70810b834203d12e4b10ccf9732d5db7ca2ed5d75705d7b896"},
+    {file = "piphi_runtime_kit_python-0.4.6-py3-none-any.whl", hash = "sha256:94537fb010ab5047bb85f380763f425776b63932755c04a04e2c1618652b5274"},
+    {file = "piphi_runtime_kit_python-0.4.6.tar.gz", hash = "sha256:72dcb0e78d7ec570b6e9a459a42e903013f3a4067bb9049152362523fc9d0e7a"},
 ]
 
 [[package]]
 name = "piphi-runtime-testkit-python"
-version = "0.1.1"
+version = "0.1.3"
 requires_python = ">=3.11"
 summary = "Pytest-first helpers for testing PiPhi runtime integrations"
 groups = ["dev"]
@@ -483,8 +483,8 @@ dependencies = [
     "pytest<9.0,>=8.3",
 ]
 files = [
-    {file = "piphi_runtime_testkit_python-0.1.1-py3-none-any.whl", hash = "sha256:436ae51cb02924ee0de700cea517f3fc1cb1381190aa048f177f5f6b8bdfa661"},
-    {file = "piphi_runtime_testkit_python-0.1.1.tar.gz", hash = "sha256:faa234d8d9cb702eedfcd241f61a478bb5e0e315dc26dd84da12ef2b94644b37"},
+    {file = "piphi_runtime_testkit_python-0.1.3-py3-none-any.whl", hash = "sha256:d58e80c9808df93e68d25b3b0972cf89693697c6b470b488e16ed15ff1694c3a"},
+    {file = "piphi_runtime_testkit_python-0.1.3.tar.gz", hash = "sha256:43e4dcd08fab45c2434d8ea23d0373fb2dc91b59d231b67e35ad636a0648cc29"},
 ]
 
 [[package]]
@@ -682,13 +682,13 @@ files = [
 
 [[package]]
 name = "python-multipart"
-version = "0.0.26"
+version = "0.0.27"
 requires_python = ">=3.10"
 summary = "A streaming multipart parser for Python"
 groups = ["default"]
 files = [
-    {file = "python_multipart-0.0.26-py3-none-any.whl", hash = "sha256:c0b169f8c4484c13b0dcf2ef0ec3a4adb255c4b7d18d8e420477d2b1dd03f185"},
-    {file = "python_multipart-0.0.26.tar.gz", hash = "sha256:08fadc45918cd615e26846437f50c5d6d23304da32c341f289a617127b081f17"},
+    {file = "python_multipart-0.0.27-py3-none-any.whl", hash = "sha256:6fccfad17a27334bd0193681b369f476eda3409f17381a2d65aa7df3f7275645"},
+    {file = "python_multipart-0.0.27.tar.gz", hash = "sha256:9870a6a8c5a20a5bf4f07c017bd1489006ff8836cff097b6933355ee2b49b602"},
 ]
 
 [[package]]
@@ -871,19 +871,19 @@ files = [
 
 [[package]]
 name = "typer"
-version = "0.24.2"
+version = "0.25.0"
 requires_python = ">=3.10"
 summary = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 groups = ["default"]
 dependencies = [
     "annotated-doc>=0.0.2",
     "click>=8.2.1",
-    "rich>=12.3.0",
+    "rich>=13.8.0",
     "shellingham>=1.3.0",
 ]
 files = [
-    {file = "typer-0.24.2-py3-none-any.whl", hash = "sha256:b618bc3d721f9a8d30f3e05565be26416d06e9bcc29d49bc491dc26aba674fa8"},
-    {file = "typer-0.24.2.tar.gz", hash = "sha256:ec070dcfca1408e85ee203c6365001e818c3b7fffe686fd07ff2d68095ca0480"},
+    {file = "typer-0.25.0-py3-none-any.whl", hash = "sha256:ac01b48823d3db9a83c9e164338057eadbb1c9957a2a6b4eeb486669c560b5dc"},
+    {file = "typer-0.25.0.tar.gz", hash = "sha256:123eaf9f19bb40fd268310e12a542c0c6b4fab9c98d9d23342a01ff95e3ce930"},
 ]
 
 [[package]]

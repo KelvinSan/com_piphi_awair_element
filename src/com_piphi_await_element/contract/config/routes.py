@@ -15,6 +15,7 @@ from piphi_runtime_kit_python import (
     create_tracked_task,
     format_config_apply_log,
     format_runtime_auth_sync_log,
+    resolve_core_base_url,
     schedule_event_delivery,
     schedule_telemetry_delivery,
 )
@@ -40,7 +41,7 @@ from com_piphi_await_element.lib.store import (
 
 config_router = APIRouter(tags=["config"])
 
-CORE_BASE_URL = "http://127.0.0.1:31419"
+CORE_BASE_URL = resolve_core_base_url("http://127.0.0.1:31419")
 TELEMETRY_URL_TIMEOUT_SECONDS = 4.0
 EVENT_REQUEST_TIMEOUT_SECONDS = 3.0
 AWAIR_LATEST_AIR_DATA_PATH = "/air-data/latest"

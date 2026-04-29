@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import asyncio
 import time
 
 import httpx
@@ -20,6 +21,7 @@ from com_piphi_await_element.lib.store import registry, runtime_context
 config_module = importlib.import_module("com_piphi_await_element.contract.config.routes")
 command_module = importlib.import_module("com_piphi_await_element.contract.command.router")
 discovery_module = importlib.import_module("com_piphi_await_element.contract.discovery.discovery")
+lifespan_module = importlib.import_module("com_piphi_await_element.lib.lifespan")
 
 
 class _FakeAwairResponse:
@@ -38,12 +40,37 @@ class _FakeAwairResponse:
         }
 
 
+class _OfflineCoreClient:
+    async def get(self, *_args, **_kwargs):
+        raise httpx.ConnectError("All connection attempts failed")
+
+
+class _CoreConfigResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self):
+        return self.payload
+
+
+class _CoreConfigClient:
+    def __init__(self, payload):
+        self.payload = payload
+
+    async def get(self, *_args, **_kwargs):
+        return _CoreConfigResponse(self.payload)
+
+
 def reset_runtime_state() -> None:
     registry.entries.clear()
     registry.state_snapshots.clear()
     registry.recent_events.clear()
     runtime_context.auth.container_id = ""
     runtime_context.auth.internal_token = ""
+    runtime_context.process_state.current_generation = None
     runtime_context.process_state.background_tasks.clear()
 
 
@@ -54,6 +81,107 @@ def wait_for(condition, *, timeout: float = 2.0) -> None:
             return
         time.sleep(0.05)
     raise AssertionError("Timed out waiting for background delivery to complete.")
+
+
+def test_startup_sync_falls_back_to_mounted_snapshot_when_core_is_offline(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    reset_runtime_state()
+
+    async def fake_poll_loop(*args, **kwargs) -> None:
+        return None
+
+    monkeypatch.setattr(config_module, "fetch_awair_data", fake_poll_loop)
+    snapshot_path = tmp_path / "runtime-123.json"
+    snapshot_path.write_text(
+        """
+        {
+          "schema_version": 1,
+          "container_id": "runtime-123",
+          "integration_id": "com.piphi.awair_element",
+          "reason": "startup_snapshot",
+          "generation": 42,
+          "configs": [
+            {
+              "id": "awair-1",
+              "config_id": "awair-1",
+              "container_id": "runtime-123",
+              "integration_id": "com.piphi.awair_element",
+              "device_ip": "10.0.0.40",
+              "device_mac": "aa:bb:cc:dd:ee:ff"
+            }
+          ],
+          "deleted_config_ids": [],
+          "config_hash": "sha256:abc"
+        }
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("PIPHI_CONFIG_SNAPSHOT_PATH", str(snapshot_path))
+    runtime_context.auth.update(
+        container_id="runtime-123",
+        internal_token="secret-token",
+    )
+
+    asyncio.run(lifespan_module.startup_sync(runtime_context, _OfflineCoreClient()))
+
+    assert registry.get("awair-1")["device_id"] == "awair-1"
+    assert runtime_context.process_state.current_generation == 42
+
+
+def test_startup_sync_applies_snapshot_then_live_core_config(
+    monkeypatch,
+    tmp_path,
+) -> None:
+    reset_runtime_state()
+
+    async def fake_poll_loop(*args, **kwargs) -> None:
+        return None
+
+    monkeypatch.setattr(config_module, "fetch_awair_data", fake_poll_loop)
+    snapshot_path = tmp_path / "runtime-123.json"
+    snapshot_path.write_text(
+        """
+        {
+          "schema_version": 1,
+          "container_id": "runtime-123",
+          "integration_id": "com.piphi.awair_element",
+          "reason": "startup_snapshot",
+          "generation": 10,
+          "configs": [
+            {
+              "id": "awair-snapshot",
+              "config_id": "awair-snapshot",
+              "container_id": "runtime-123",
+              "integration_id": "com.piphi.awair_element",
+              "device_ip": "10.0.0.40"
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("PIPHI_CONFIG_SNAPSHOT_PATH", str(snapshot_path))
+    runtime_context.auth.update(
+        container_id="runtime-123",
+        internal_token="secret-token",
+    )
+    live_core_configs = [
+        {
+            "config_data": {
+                "id": "awair-core",
+                "config_id": "awair-core",
+                "integration_id": "com.piphi.awair_element",
+                "device_ip": "10.0.0.41",
+            }
+        }
+    ]
+
+    asyncio.run(lifespan_module.startup_sync(runtime_context, _CoreConfigClient(live_core_configs)))
+
+    assert registry.get("awair-core")["device_id"] == "awair-core"
+    assert registry.get("awair-snapshot") is None
 
 
 def test_config_apply_sends_awair_telemetry_and_event(
