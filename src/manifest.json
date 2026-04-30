@@ -170,26 +170,5 @@
         "refresh"
       ]
     }
-  ],
-  "extensions": [
-    {
-      "id": "rtl433_ingest",
-      "enabled_by_default": false,
-      "type": "event_ingestion",
-      "runtime": {
-        "linux": {
-          "type": "container_sidecar",
-          "container": {
-            "image": "ghcr.io/merbanan/rtl_433:latest",
-            "network_mode": "host",
-            "privileged": true
-          }
-        }
-      },
-      "outputs": {
-        "endpoint": "/events",
-        "event_type": "radio_packet"
-      }
-    }
   ]
 }
