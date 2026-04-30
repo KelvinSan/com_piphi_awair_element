@@ -85,7 +85,7 @@
   },
   "identity": {
     "fields": [
-      "host"
+      "device_ip"
     ]
   },
   "capabilities": {
