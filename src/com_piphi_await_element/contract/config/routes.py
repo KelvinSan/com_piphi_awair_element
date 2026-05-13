@@ -83,16 +83,21 @@ def _build_telemetry_payload(telemetry_data: Dict[str, Any]) -> Dict[str, Any]:
     return payload
 
 
+AWAIR_METRIC_ALIASES: dict[str, tuple[str, ...]] = {
+    "temp": ("temperature",),
+    "humid": ("humidity",),
+    "dew_point": ("dew_pt",),
+    "abs_humid": ("absolute_humidity",),
+}
+
+
 def _extract_awair_metrics(awair_response: Dict[str, Any]) -> Dict[str, Any]:
-    return {
-        "temp": awair_response["temp"],
-        "humid": awair_response["humid"],
-        "co2": awair_response["co2"],
-        "voc": awair_response["voc"],
-        "pm25": awair_response["pm25"],
-        "score": awair_response["score"],
-        "dew_pt": awair_response["dew_point"],
-    }
+    payload: Dict[str, Any] = {}
+    for key, value in awair_response.items():
+        payload[key] = value
+        for alias in AWAIR_METRIC_ALIASES.get(key, ()):
+            payload[alias] = value
+    return payload
 
 
 async def fetch_awair_state(
@@ -118,11 +123,22 @@ async def fetch_awair_state(
             container_id=container_id,
             units={
                 "pm25": "ug/m3",
+                "pm10_est": "ug/m3",
                 "score": "%",
                 "co2": "ppm",
+                "co2_est": "ppm",
+                "co2_est_baseline": "ppm",
                 "voc": "ppb",
+                "voc_baseline": "ppb",
+                "voc_h2_raw": "raw",
+                "voc_ethanol_raw": "raw",
                 "humid": "%",
+                "humidity": "%",
+                "abs_humid": "g/m3",
+                "absolute_humidity": "g/m3",
                 "temp": "°C",
+                "temperature": "°C",
+                "dew_point": "°C",
                 "dew_pt": "°C",
             },
             on_skipped=lambda reason, details: log_event(

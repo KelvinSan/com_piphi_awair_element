@@ -101,6 +101,18 @@
         "default_widget": "stat"
       }
     },
+    "dew_point": {
+      "kind": "sensor",
+      "unit": "\u00b0C",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "stat"
+      }
+    },
     "humidity": {
       "kind": "sensor",
       "unit": "%",
@@ -113,6 +125,18 @@
         "default_widget": "gauge"
       }
     },
+    "absolute_humidity": {
+      "kind": "sensor",
+      "unit": "g/m3",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "stat"
+      }
+    },
     "co2": {
       "kind": "sensor",
       "unit": "ppm",
@@ -123,6 +147,112 @@
           "gauge"
         ],
         "default_widget": "stat"
+      }
+    },
+    "co2_est": {
+      "kind": "sensor",
+      "unit": "ppm",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "stat"
+      }
+    },
+    "co2_est_baseline": {
+      "kind": "sensor",
+      "unit": "ppm",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "stat"
+      }
+    },
+    "voc": {
+      "kind": "sensor",
+      "unit": "ppb",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "stat"
+      }
+    },
+    "voc_baseline": {
+      "kind": "sensor",
+      "unit": "ppb",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "stat"
+      }
+    },
+    "voc_h2_raw": {
+      "kind": "sensor",
+      "unit": "raw",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart"
+        ],
+        "default_widget": "stat"
+      }
+    },
+    "voc_ethanol_raw": {
+      "kind": "sensor",
+      "unit": "raw",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart"
+        ],
+        "default_widget": "stat"
+      }
+    },
+    "pm25": {
+      "kind": "sensor",
+      "unit": "ug/m3",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "stat"
+      }
+    },
+    "pm10_est": {
+      "kind": "sensor",
+      "unit": "ug/m3",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "stat"
+      }
+    },
+    "score": {
+      "kind": "sensor",
+      "unit": "%",
+      "dashboard": {
+        "allowed_widgets": [
+          "stat",
+          "line_chart",
+          "gauge"
+        ],
+        "default_widget": "gauge"
       }
     },
     "refresh": {
@@ -150,6 +280,13 @@
       ]
     },
     {
+      "id": "dew_point",
+      "name": "Dew Point",
+      "capabilities": [
+        "dew_point"
+      ]
+    },
+    {
       "id": "humidity",
       "name": "Humidity",
       "capabilities": [
@@ -157,10 +294,80 @@
       ]
     },
     {
+      "id": "absolute_humidity",
+      "name": "Absolute Humidity",
+      "capabilities": [
+        "absolute_humidity"
+      ]
+    },
+    {
       "id": "co2",
       "name": "CO\u2082",
       "capabilities": [
         "co2"
+      ]
+    },
+    {
+      "id": "co2_est",
+      "name": "Estimated CO\u2082",
+      "capabilities": [
+        "co2_est"
+      ]
+    },
+    {
+      "id": "co2_est_baseline",
+      "name": "CO\u2082 Baseline",
+      "capabilities": [
+        "co2_est_baseline"
+      ]
+    },
+    {
+      "id": "voc",
+      "name": "VOC",
+      "capabilities": [
+        "voc"
+      ]
+    },
+    {
+      "id": "voc_baseline",
+      "name": "VOC Baseline",
+      "capabilities": [
+        "voc_baseline"
+      ]
+    },
+    {
+      "id": "voc_h2_raw",
+      "name": "VOC H\u2082 Raw",
+      "capabilities": [
+        "voc_h2_raw"
+      ]
+    },
+    {
+      "id": "voc_ethanol_raw",
+      "name": "VOC Ethanol Raw",
+      "capabilities": [
+        "voc_ethanol_raw"
+      ]
+    },
+    {
+      "id": "pm25",
+      "name": "PM2.5",
+      "capabilities": [
+        "pm25"
+      ]
+    },
+    {
+      "id": "pm10_est",
+      "name": "Estimated PM10",
+      "capabilities": [
+        "pm10_est"
+      ]
+    },
+    {
+      "id": "score",
+      "name": "Air Quality Score",
+      "capabilities": [
+        "score"
       ]
     },
     {

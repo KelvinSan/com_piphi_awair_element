@@ -4,7 +4,23 @@
       "id": "awair_element",
       "name": "Awair Element",
       "description": "Indoor air quality monitor",
-      "capabilities": ["temperature", "humidity", "co2", "refresh"],
+      "capabilities": [
+        "temperature",
+        "dew_point",
+        "humidity",
+        "absolute_humidity",
+        "co2",
+        "co2_est",
+        "co2_est_baseline",
+        "voc",
+        "voc_baseline",
+        "voc_h2_raw",
+        "voc_ethanol_raw",
+        "pm25",
+        "pm10_est",
+        "score",
+        "refresh"
+      ],
       "intents": [
         {
           "id": "monitor_air_quality",
@@ -20,7 +36,7 @@
       "conditions": [
         {
           "id": "co2_above",
-          "label": "CO2 above",
+          "label": "CO2 level",
           "type": "number",
           "params": [
             {
@@ -34,7 +50,27 @@
               "unit": "ppm",
               "required": true
             }
-          ]
+          ],
+          "capability": "sensor.co2",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "co2",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
         },
         {
           "id": "humidity_outside_range",
@@ -63,11 +99,31 @@
               "unit": "%",
               "required": true
             }
-          ]
+          ],
+          "capability": "sensor.humidity",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "humidity",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
         },
         {
           "id": "temperature_above",
-          "label": "Temperature above",
+          "label": "Temperature",
           "type": "number",
           "params": [
             {
@@ -81,14 +137,487 @@
               "unit": "°C",
               "required": true
             }
-          ]
+          ],
+          "capability": "sensor.temperature",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "temperature",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "score_below",
+          "label": "Air quality score",
+          "type": "number",
+          "params": [
+            {
+              "name": "score",
+              "label": "Score threshold",
+              "type": "number",
+              "min": 0,
+              "max": 100,
+              "default": 60,
+              "step": 1,
+              "unit": "%",
+              "required": true
+            }
+          ],
+          "capability": "sensor.score",
+          "operators": [
+            "<",
+            "<=",
+            ">",
+            ">=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "score",
+            "operator": "<"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "dew_point_above",
+          "label": "Dew point",
+          "type": "number",
+          "params": [
+            {
+              "name": "celsius",
+              "label": "Dew point threshold",
+              "type": "number",
+              "min": -20,
+              "max": 35,
+              "default": 16,
+              "step": 0.5,
+              "unit": "°C",
+              "required": true
+            }
+          ],
+          "capability": "sensor.dew_point",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "dew_point",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "absolute_humidity_above",
+          "label": "Absolute humidity",
+          "type": "number",
+          "params": [
+            {
+              "name": "grams_per_m3",
+              "label": "Absolute humidity threshold",
+              "type": "number",
+              "min": 0,
+              "max": 40,
+              "default": 12,
+              "step": 0.1,
+              "unit": "g/m3",
+              "required": true
+            }
+          ],
+          "capability": "sensor.absolute_humidity",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "absolute_humidity",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "co2_est_above",
+          "label": "Estimated CO2",
+          "type": "number",
+          "params": [
+            {
+              "name": "ppm",
+              "label": "Estimated CO2 threshold",
+              "type": "number",
+              "min": 400,
+              "max": 5000,
+              "default": 1000,
+              "step": 50,
+              "unit": "ppm",
+              "required": true
+            }
+          ],
+          "capability": "sensor.co2_est",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "co2_est",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "co2_est_baseline_above",
+          "label": "CO2 baseline",
+          "type": "number",
+          "params": [
+            {
+              "name": "ppm",
+              "label": "CO2 baseline threshold",
+              "type": "number",
+              "min": 0,
+              "max": 100000,
+              "default": 36000,
+              "step": 100,
+              "unit": "ppm",
+              "required": true
+            }
+          ],
+          "capability": "sensor.co2_est_baseline",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "co2_est_baseline",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "voc_above",
+          "label": "VOC",
+          "type": "number",
+          "params": [
+            {
+              "name": "ppb",
+              "label": "VOC threshold",
+              "type": "number",
+              "min": 0,
+              "max": 10000,
+              "default": 1000,
+              "step": 50,
+              "unit": "ppb",
+              "required": true
+            }
+          ],
+          "capability": "sensor.voc",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "voc",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "voc_baseline_above",
+          "label": "VOC baseline",
+          "type": "number",
+          "params": [
+            {
+              "name": "ppb",
+              "label": "VOC baseline threshold",
+              "type": "number",
+              "min": 0,
+              "max": 100000,
+              "default": 40000,
+              "step": 100,
+              "unit": "ppb",
+              "required": true
+            }
+          ],
+          "capability": "sensor.voc_baseline",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "voc_baseline",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "voc_h2_raw_above",
+          "label": "VOC H2 raw",
+          "type": "number",
+          "params": [
+            {
+              "name": "raw",
+              "label": "VOC H2 raw threshold",
+              "type": "number",
+              "min": 0,
+              "max": 100000,
+              "default": 25,
+              "step": 1,
+              "unit": "raw",
+              "required": true
+            }
+          ],
+          "capability": "sensor.voc_h2_raw",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "voc_h2_raw",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "voc_ethanol_raw_above",
+          "label": "VOC ethanol raw",
+          "type": "number",
+          "params": [
+            {
+              "name": "raw",
+              "label": "VOC ethanol raw threshold",
+              "type": "number",
+              "min": 0,
+              "max": 100000,
+              "default": 37,
+              "step": 1,
+              "unit": "raw",
+              "required": true
+            }
+          ],
+          "capability": "sensor.voc_ethanol_raw",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "voc_ethanol_raw",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "pm25_above",
+          "label": "PM2.5",
+          "type": "number",
+          "params": [
+            {
+              "name": "ug_per_m3",
+              "label": "PM2.5 threshold",
+              "type": "number",
+              "min": 0,
+              "max": 500,
+              "default": 12,
+              "step": 1,
+              "unit": "ug/m3",
+              "required": true
+            }
+          ],
+          "capability": "sensor.pm25",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "pm25",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
+        },
+        {
+          "id": "pm10_est_above",
+          "label": "Estimated PM10",
+          "type": "number",
+          "params": [
+            {
+              "name": "ug_per_m3",
+              "label": "Estimated PM10 threshold",
+              "type": "number",
+              "min": 0,
+              "max": 500,
+              "default": 50,
+              "step": 1,
+              "unit": "ug/m3",
+              "required": true
+            }
+          ],
+          "capability": "sensor.pm10_est",
+          "operators": [
+            ">",
+            ">=",
+            "<",
+            "<=",
+            "eq"
+          ],
+          "runtime": {
+            "source": "state",
+            "field": "pm10_est",
+            "operator": ">"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "only_if"
+          }
         }
       ],
       "actions": [
         {
           "id": "refresh_readings",
           "label": "Refresh readings",
-          "description": "Request an immediate reading refresh"
+          "description": "Request an immediate reading refresh",
+          "capability": "device.refresh",
+          "runtime": {
+            "command": "refresh_readings"
+          },
+          "targeting": {
+            "fanoutSafe": true,
+            "scopes": [
+              "config",
+              "configs",
+              "room",
+              "rooms",
+              "group",
+              "groups",
+              "selection",
+              "tag",
+              "tags",
+              "capability",
+              "all_matching"
+            ],
+            "supportsMultiTarget": true
+          },
+          "failure": {
+            "strategy": "retry_then_continue",
+            "retry": {
+              "maxAttempts": 1,
+              "delaySeconds": 2,
+              "backoff": "fixed"
+            },
+            "timeoutSeconds": 30,
+            "continueOnPartialFailure": true,
+            "idempotent": true
+          },
+          "ui": {
+            "group": "do_this"
+          }
         },
         {
           "id": "notify",
@@ -105,11 +634,50 @@
               "name": "channel",
               "label": "Delivery channel",
               "type": "enum",
-              "options": ["in_app", "email", "sms"],
+              "options": [
+                "in_app",
+                "email",
+                "sms"
+              ],
               "default": "in_app",
               "required": true
             }
-          ]
+          ],
+          "capability": "notification.send",
+          "runtime": {
+            "command": "notify"
+          },
+          "targeting": {
+            "fanoutSafe": true,
+            "scopes": [
+              "config",
+              "configs",
+              "room",
+              "rooms",
+              "group",
+              "groups",
+              "selection",
+              "tag",
+              "tags",
+              "capability",
+              "all_matching"
+            ],
+            "supportsMultiTarget": true
+          },
+          "failure": {
+            "strategy": "retry_then_continue",
+            "retry": {
+              "maxAttempts": 1,
+              "delaySeconds": 2,
+              "backoff": "fixed"
+            },
+            "timeoutSeconds": 30,
+            "continueOnPartialFailure": true,
+            "idempotent": true
+          },
+          "ui": {
+            "group": "do_this"
+          }
         }
       ],
       "stop": [
@@ -146,7 +714,69 @@
             }
           ]
         }
+      ],
+      "deviceClass": "air_quality_sensor",
+      "entityType": "sensor",
+      "targeting": {
+        "scopes": [
+          "config",
+          "configs",
+          "room",
+          "rooms",
+          "group",
+          "groups",
+          "selection",
+          "tag",
+          "tags",
+          "capability",
+          "all_matching"
+        ],
+        "fanout": {
+          "supported": true,
+          "defaultMode": "selection",
+          "allowedModes": [
+            "config",
+            "configs",
+            "room",
+            "rooms",
+            "group",
+            "groups",
+            "tag",
+            "tags",
+            "capability",
+            "selection",
+            "all_matching"
+          ]
+        }
+      },
+      "freshness": {
+        "maxAgeSeconds": 300,
+        "staleDataMode": "block"
+      },
+      "ui": {
+        "icon": "wind",
+        "category": "air_quality_sensor"
+      },
+      "triggers": [
+        {
+          "id": "state_changed",
+          "label": "Device updates",
+          "description": "Start when this device reports a new state.",
+          "capability": "telemetry.state",
+          "runtime": {
+            "event": "device.state_changed",
+            "source": "integration"
+          },
+          "freshness": {
+            "maxAgeSeconds": 300,
+            "staleDataMode": "block"
+          },
+          "ui": {
+            "group": "when"
+          }
+        }
       ]
     }
-  ]
+  ],
+  "behaviorSchemaVersion": "integration.behaviors.v2"
 }

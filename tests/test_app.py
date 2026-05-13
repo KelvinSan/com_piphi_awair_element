@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import importlib
 import asyncio
+import json
 import time
+from pathlib import Path
 
 import httpx
 import pytest
@@ -18,6 +20,8 @@ from piphi_runtime_testkit_python import (
 from com_piphi_await_element.app import app
 from com_piphi_await_element.lib.store import registry, runtime_context
 
+PACKAGE_SRC = Path(__file__).resolve().parents[1] / "src"
+
 config_module = importlib.import_module("com_piphi_await_element.contract.config.routes")
 command_module = importlib.import_module("com_piphi_await_element.contract.command.router")
 discovery_module = importlib.import_module("com_piphi_await_element.contract.discovery.discovery")
@@ -28,15 +32,23 @@ class _FakeAwairResponse:
     def raise_for_status(self) -> None:
         return None
 
-    def json(self) -> dict[str, float]:
+    def json(self) -> dict[str, object]:
         return {
+            "timestamp": "2026-05-13T14:55:28.665Z",
+            "score": 55,
+            "dew_point": 14.65,
             "temp": 22.1,
             "humid": 47.5,
+            "abs_humid": 12.13,
             "co2": 612,
+            "co2_est": 584,
+            "co2_est_baseline": 36389,
             "voc": 105,
+            "voc_baseline": 40607,
+            "voc_h2_raw": 25,
+            "voc_ethanol_raw": 37,
             "pm25": 3,
-            "score": 98,
-            "dew_point": 9.8,
+            "pm10_est": 3,
         }
 
 
@@ -236,7 +248,16 @@ def test_config_apply_sends_awair_telemetry_and_event(
         assert event_headers["x-container-id"] == "runtime-123"
         assert event_headers["x-piphi-integration-token"] == "secret-token"
         assert telemetry_request.json_body["metrics"]["temp"] == 22.1
+        assert telemetry_request.json_body["metrics"]["temperature"] == 22.1
+        assert telemetry_request.json_body["metrics"]["humidity"] == 47.5
+        assert telemetry_request.json_body["metrics"]["absolute_humidity"] == 12.13
+        assert telemetry_request.json_body["metrics"]["co2_est"] == 584
+        assert telemetry_request.json_body["metrics"]["voc_baseline"] == 40607
+        assert telemetry_request.json_body["metrics"]["pm10_est"] == 3
         assert telemetry_request.json_body["units"]["temp"] == "°C"
+        assert telemetry_request.json_body["units"]["temperature"] == "°C"
+        assert telemetry_request.json_body["units"]["humidity"] == "%"
+        assert telemetry_request.json_body["units"]["pm10_est"] == "ug/m3"
         assert (event_request.json_body.get("event_type") or event_request.json_body.get("type")) == "device.configured"
 
 
@@ -360,10 +381,17 @@ def test_state_route_refreshes_missing_awair_snapshot_with_testkit(
         assert state_response.status_code == 200
         assert state_response.json()["device_id"] == "awair-1"
         assert state_response.json()["state"]["temp"] == 22.1
+        assert state_response.json()["state"]["temperature"] == 22.1
+        assert state_response.json()["state"]["humid"] == 47.5
+        assert state_response.json()["state"]["humidity"] == 47.5
+        assert state_response.json()["state"]["dew_point"] == 14.65
+        assert state_response.json()["state"]["dew_pt"] == 14.65
+        assert state_response.json()["state"]["co2_est_baseline"] == 36389
 
         wait_for(lambda: len(mock_core.telemetry_requests) >= 1)
         telemetry_request = assert_telemetry_sent(mock_core, device_id="awair-1")
         assert telemetry_request.json_body["metrics"]["temp"] == 22.1
+        assert telemetry_request.json_body["metrics"]["temperature"] == 22.1
 
 
 def test_deconfigure_sends_awair_event_and_removes_entry(
@@ -695,6 +723,59 @@ def test_awair_manifest_route_returns_identity_fields() -> None:
     assert response.json()["id"]
     assert response.json()["name"]
     assert response.json()["version"]
+
+
+def test_awair_manifest_exposes_all_latest_air_data_capabilities() -> None:
+    manifest = json.loads((PACKAGE_SRC / "manifest.json").read_text(encoding="utf-8"))
+    capabilities = set(manifest["capabilities"])
+    entity_capabilities = {
+        capability
+        for entity in manifest["entities"]
+        for capability in entity.get("capabilities", [])
+    }
+
+    expected = {
+        "temperature",
+        "dew_point",
+        "humidity",
+        "absolute_humidity",
+        "co2",
+        "co2_est",
+        "co2_est_baseline",
+        "voc",
+        "voc_baseline",
+        "voc_h2_raw",
+        "voc_ethanol_raw",
+        "pm25",
+        "pm10_est",
+        "score",
+    }
+
+    assert expected <= capabilities
+    assert expected <= entity_capabilities
+
+
+def test_awair_behaviors_expose_all_numeric_metrics_as_conditions() -> None:
+    behaviors = json.loads((PACKAGE_SRC / "behaviors.json").read_text(encoding="utf-8"))
+    conditions = behaviors["devices"][0]["conditions"]
+    runtime_fields = {condition["runtime"]["field"] for condition in conditions}
+
+    assert {
+        "temperature",
+        "dew_point",
+        "humidity",
+        "absolute_humidity",
+        "co2",
+        "co2_est",
+        "co2_est_baseline",
+        "voc",
+        "voc_baseline",
+        "voc_h2_raw",
+        "voc_ethanol_raw",
+        "pm25",
+        "pm10_est",
+        "score",
+    } <= runtime_fields
 
 
 def test_awair_command_refresh_returns_state_for_explicit_device(monkeypatch) -> None:
