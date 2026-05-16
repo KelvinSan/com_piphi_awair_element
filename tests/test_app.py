@@ -491,7 +491,7 @@ def test_awair_command_refresh_returns_404_without_primary_device(monkeypatch) -
         response = client.post("/command", json={"command": "refresh"})
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "No configured device found"
+    assert response.json()["detail"]["error"] == "missing_target"
 
 
 def test_awair_command_unknown_returns_404(monkeypatch) -> None:
@@ -501,8 +501,8 @@ def test_awair_command_unknown_returns_404(monkeypatch) -> None:
     with TestClient(app) as client:
         response = client.post("/command", json={"command": "do_something_else"})
 
-    assert response.status_code == 404
-    assert "Unknown command" in response.json()["detail"]
+    assert response.status_code == 400
+    assert response.json()["detail"]["error"] == "unsupported_command"
 
 
 def test_awair_config_apply_still_succeeds_when_initial_refresh_fails(
@@ -778,6 +778,46 @@ def test_awair_behaviors_expose_all_numeric_metrics_as_conditions() -> None:
     } <= runtime_fields
 
 
+def test_awair_behaviors_expose_discord_webhook_action_and_templates() -> None:
+    behaviors = json.loads((PACKAGE_SRC / "behaviors.json").read_text(encoding="utf-8"))
+    device = behaviors["devices"][0]
+    actions = {action["id"]: action for action in device["actions"]}
+    template_ids = {template["id"] for template in behaviors["templates"]}
+
+    discord_action = actions["discord_webhook"]
+    assert discord_action["runtime"]["command"] == "discord_webhook"
+    assert discord_action["capability"] == "notification.discord_webhook"
+    assert discord_action["safety"]["riskLevel"] == "low"
+    assert [param["name"] for param in discord_action["params"]] == [
+        "webhook_url",
+        "message",
+        "username",
+    ]
+    assert {
+        "awair_co2_discord_alert",
+        "awair_particle_discord_alert",
+        "awair_sleep_humidity_alert",
+    } <= template_ids
+
+    discord_templates = [
+        template for template in behaviors["templates"]
+        if template["id"] in {"awair_co2_discord_alert", "awair_particle_discord_alert"}
+    ]
+    for template in discord_templates:
+        action = template["config"]["actions"][0]
+        assert action["action"] == "discord_webhook"
+        assert action["sourceRef"]["optionKey"] == "discord_webhook"
+        assert action["parameters"]["webhook_url"] == "{{discordWebhookUrl}}"
+
+    pm25_template = next(
+        template for template in behaviors["templates"]
+        if template["id"] == "awair_particle_discord_alert"
+    )
+    assert pm25_template["config"]["conditions"]["integrationCondition"]["params"] == {
+        "ug_per_m3": 35,
+    }
+
+
 def test_awair_command_refresh_returns_state_for_explicit_device(monkeypatch) -> None:
     reset_runtime_state()
     monkeypatch.setattr(command_module, "load_manifest", lambda: {"commands": {"refresh": {}}})
@@ -794,6 +834,132 @@ def test_awair_command_refresh_returns_state_for_explicit_device(monkeypatch) ->
     assert response.json()["status"] == "ok"
     assert response.json()["device_id"] == "awair-1"
     assert response.json()["result"]["state"]["temp"] == 22.1
+
+
+def test_awair_command_accepts_automation_runtime_contract(monkeypatch) -> None:
+    reset_runtime_state()
+    monkeypatch.setattr(command_module, "load_manifest", lambda: {"commands": {"refresh": {}}})
+
+    async def fake_trigger_refresh(device_id: str):
+        return {"device_id": device_id, "state": {"temp": 22.1}}
+
+    monkeypatch.setattr(command_module, "trigger_refresh", fake_trigger_refresh)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/command",
+            json={
+                "contract_version": "automation.runtime.command.v1",
+                "command": "refresh_readings",
+                "target": {"device_id": "awair-1", "config_id": "awair-config"},
+                "params": {"force": True},
+                "capability": "device.refresh",
+                "capability_requirements": ["device.refresh"],
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["ok"] is True
+    assert body["command"] == "refresh"
+    assert body["contract_version"] == "automation.runtime.command.v1"
+    assert body["device_id"] == "awair-1"
+    assert body["params"] == {"force": True}
+
+
+def test_awair_command_sends_discord_webhook(monkeypatch) -> None:
+    reset_runtime_state()
+    monkeypatch.setattr(command_module, "load_manifest", lambda: {"commands": {}})
+
+    class FakeDiscordResponse:
+        status_code = 204
+
+    class FakeAsyncClient:
+        requests: list[dict[str, object]] = []
+
+        def __init__(self, *, timeout: float) -> None:
+            self.timeout = timeout
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc: object) -> None:
+            return None
+
+        async def post(self, url: str, *, json: dict[str, object]):
+            self.requests.append({"url": url, "json": json, "timeout": self.timeout})
+            return FakeDiscordResponse()
+
+    monkeypatch.setattr(command_module.httpx, "AsyncClient", FakeAsyncClient)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/command",
+            json={
+                "contract_version": "automation.runtime.command.v1",
+                "command": "discord_webhook",
+                "target": {"device_id": "awair-1"},
+                "capability": "notification.discord_webhook",
+                "capability_requirements": ["notification.discord_webhook"],
+                "params": {
+                    "webhook_url": "https://discord.com/api/webhooks/123/token",
+                    "message": "CO2 is high",
+                    "username": "PiPhi Air",
+                },
+            },
+        )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["ok"] is True
+    assert body["command"] == "discord_webhook"
+    assert body["result"]["channel"] == "discord"
+    assert FakeAsyncClient.requests == [
+        {
+            "url": "https://discord.com/api/webhooks/123/token",
+            "json": {"content": "CO2 is high", "username": "PiPhi Air"},
+            "timeout": 10.0,
+        }
+    ]
+
+
+def test_awair_command_rejects_invalid_discord_webhook_url(monkeypatch) -> None:
+    reset_runtime_state()
+    monkeypatch.setattr(command_module, "load_manifest", lambda: {"commands": {}})
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/command",
+            json={
+                "command": "discord_webhook",
+                "capability": "notification.discord_webhook",
+                "params": {
+                    "webhook_url": "https://example.com/webhook",
+                    "message": "CO2 is high",
+                },
+            },
+        )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["error"] == "invalid_webhook_url"
+
+
+def test_awair_command_rejects_unsupported_capability(monkeypatch) -> None:
+    reset_runtime_state()
+    monkeypatch.setattr(command_module, "load_manifest", lambda: {"commands": {"refresh": {}}})
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/command",
+            json={
+                "command": "refresh",
+                "target": {"device_id": "awair-1"},
+                "capability": "switch.power",
+            },
+        )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["error"] == "unsupported_capability"
 
 
 def test_awair_state_returns_404_for_unknown_explicit_device() -> None:

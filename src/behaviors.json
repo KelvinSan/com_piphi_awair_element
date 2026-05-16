@@ -587,6 +587,11 @@
           "runtime": {
             "command": "refresh_readings"
           },
+          "safety": {
+            "riskLevel": "low",
+            "requiresConfirmation": false,
+            "liveRunAllowed": true
+          },
           "targeting": {
             "fanoutSafe": true,
             "scopes": [
@@ -621,18 +626,18 @@
         },
         {
           "id": "notify",
-          "label": "Send notification",
+          "label": "Send a message",
           "params": [
             {
               "name": "message",
-              "label": "Notification message",
+              "label": "Message",
               "type": "text",
               "default": "Air quality threshold reached",
               "required": true
             },
             {
               "name": "channel",
-              "label": "Delivery channel",
+              "label": "Send it by",
               "type": "enum",
               "options": [
                 "in_app",
@@ -646,6 +651,11 @@
           "capability": "notification.send",
           "runtime": {
             "command": "notify"
+          },
+          "safety": {
+            "riskLevel": "low",
+            "requiresConfirmation": false,
+            "liveRunAllowed": true
           },
           "targeting": {
             "fanoutSafe": true,
@@ -677,6 +687,82 @@
           },
           "ui": {
             "group": "do_this"
+          }
+        },
+        {
+          "id": "discord_webhook",
+          "label": "Send Discord message",
+          "description": "Post an air quality alert to a Discord channel using a Discord webhook URL.",
+          "params": [
+            {
+              "name": "webhook_url",
+              "label": "Discord webhook URL",
+              "type": "text",
+              "placeholder": "https://discord.com/api/webhooks/...",
+              "required": true,
+              "metadata": {
+                "secret": true,
+                "format": "discord_webhook_url"
+              }
+            },
+            {
+              "name": "message",
+              "label": "Message",
+              "type": "text",
+              "default": "Awair Element air quality alert",
+              "required": true
+            },
+            {
+              "name": "username",
+              "label": "Bot name",
+              "type": "text",
+              "default": "PiPhi Network",
+              "required": false
+            }
+          ],
+          "capability": "notification.discord_webhook",
+          "capabilityRequirements": [
+            "notification.discord_webhook"
+          ],
+          "runtime": {
+            "command": "discord_webhook"
+          },
+          "safety": {
+            "riskLevel": "low",
+            "requiresConfirmation": false,
+            "liveRunAllowed": true
+          },
+          "targeting": {
+            "fanoutSafe": true,
+            "scopes": [
+              "config",
+              "configs",
+              "room",
+              "rooms",
+              "group",
+              "groups",
+              "selection",
+              "tag",
+              "tags",
+              "capability",
+              "all_matching"
+            ],
+            "supportsMultiTarget": true
+          },
+          "failure": {
+            "strategy": "retry_then_continue",
+            "retry": {
+              "maxAttempts": 2,
+              "delaySeconds": 5,
+              "backoff": "fixed"
+            },
+            "timeoutSeconds": 15,
+            "continueOnPartialFailure": true,
+            "idempotent": true
+          },
+          "ui": {
+            "group": "do_this",
+            "category": "messaging"
           }
         }
       ],
@@ -776,6 +862,540 @@
           }
         }
       ]
+    }
+  ],
+  "templates": [
+    {
+      "id": "awair_co2_alert",
+      "label": "Tell me when CO2 is high",
+      "description": "Checks the latest Awair reading and sends a notification when the room needs fresh air.",
+      "category": "Air quality",
+      "deviceKey": "awair_element",
+      "config": {
+        "automation_schema_version": "automation.behavior.v2",
+        "triggers": [
+          {
+            "id": "state_changed",
+            "label": "Awair reading changes",
+            "type": "integration_event",
+            "event": "device.state_changed",
+            "capability": "telemetry.state",
+            "enabled": true,
+            "sourceRef": {
+              "integrationId": "{{integrationId}}",
+              "integrationKey": "{{integrationKey}}",
+              "configId": "{{configId}}",
+              "behaviorDeviceKey": "awair_element",
+              "optionKey": "state_changed",
+              "capability": "telemetry.state"
+            }
+          }
+        ],
+        "trigger": {
+          "id": "state_changed",
+          "label": "Awair reading changes",
+          "type": "integration_event",
+          "event": "device.state_changed",
+          "capability": "telemetry.state",
+          "enabled": true,
+          "sourceRef": {
+            "integrationId": "{{integrationId}}",
+            "integrationKey": "{{integrationKey}}",
+            "configId": "{{configId}}",
+            "behaviorDeviceKey": "awair_element",
+            "optionKey": "state_changed",
+            "capability": "telemetry.state"
+          }
+        },
+        "intent": "monitor_air_quality",
+        "conditionTree": {
+          "id": "co2_above_template",
+          "label": "CO2 is above 1000 ppm",
+          "field": "co2",
+          "operator": ">",
+          "value": 1000,
+          "sourceRef": {
+            "integrationId": "{{integrationId}}",
+            "integrationKey": "{{integrationKey}}",
+            "configId": "{{configId}}",
+            "behaviorDeviceKey": "awair_element",
+            "optionKey": "co2_above",
+            "capability": "sensor.co2"
+          }
+        },
+        "conditions": {
+          "integrationCondition": {
+            "id": "co2_above",
+            "params": {
+              "ppm": 1000
+            }
+          }
+        },
+        "actions": [
+          {
+            "id": "send_notification",
+            "label": "Send notification",
+            "action": "notify",
+            "capability": "notification.send",
+            "sourceRef": {
+              "integrationId": "{{integrationId}}",
+              "integrationKey": "{{integrationKey}}",
+              "configId": "{{configId}}",
+              "behaviorDeviceKey": "awair_element",
+              "optionKey": "notify",
+              "capability": "notification.send"
+            },
+            "target": {
+              "mode": "selection",
+              "configIds": [
+                "{{configId}}"
+              ]
+            },
+            "parameters": {
+              "message": "CO2 is above 1000 ppm. It may be time to bring in fresh air.",
+              "channel": "in_app"
+            },
+            "failure": {
+              "strategy": "retry_then_continue",
+              "retry": {
+                "maxAttempts": 2,
+                "delaySeconds": 2,
+                "timeoutSeconds": 10,
+                "backoff": "fixed"
+              },
+              "continueOnPartialFailure": true
+            }
+          }
+        ],
+        "safety": {
+          "staleDataMode": "block",
+          "maxAgeSeconds": 300,
+          "requireFreshTrigger": true,
+          "dryRunFirst": false
+        },
+        "failure": {
+          "strategy": "follow_edges",
+          "fallbackBehaviorId": "",
+          "conditionTree": {
+            "op": "and",
+            "children": []
+          }
+        },
+        "stop": {
+          "never": true
+        },
+        "override": {
+          "mode": "continue"
+        }
+      },
+      "ui": {
+        "accent": "air_quality",
+        "icon": "wind"
+      },
+      "metadata": {
+        "recommended": true,
+        "difficulty": "easy"
+      }
+    },
+    {
+      "id": "awair_co2_discord_alert",
+      "label": "Post to Discord when CO2 is high",
+      "description": "Posts a Discord message when CO2 rises above a healthy comfort threshold.",
+      "category": "Air quality",
+      "deviceKey": "awair_element",
+      "config": {
+        "automation_schema_version": "automation.behavior.v2",
+        "triggers": [
+          {
+            "id": "state_changed",
+            "label": "Awair reading changes",
+            "type": "integration_event",
+            "event": "device.state_changed",
+            "capability": "telemetry.state",
+            "enabled": true,
+            "sourceRef": {
+              "integrationId": "{{integrationId}}",
+              "integrationKey": "{{integrationKey}}",
+              "configId": "{{configId}}",
+              "behaviorDeviceKey": "awair_element",
+              "optionKey": "state_changed",
+              "capability": "telemetry.state"
+            }
+          }
+        ],
+        "trigger": {
+          "id": "state_changed",
+          "label": "Awair reading changes",
+          "type": "integration_event",
+          "event": "device.state_changed",
+          "capability": "telemetry.state",
+          "enabled": true,
+          "sourceRef": {
+            "integrationId": "{{integrationId}}",
+            "integrationKey": "{{integrationKey}}",
+            "configId": "{{configId}}",
+            "behaviorDeviceKey": "awair_element",
+            "optionKey": "state_changed",
+            "capability": "telemetry.state"
+          }
+        },
+        "intent": "monitor_air_quality",
+        "conditionTree": {
+          "id": "co2_above_discord_template",
+          "label": "CO2 is above 1000 ppm",
+          "field": "co2",
+          "operator": ">",
+          "value": 1000,
+          "sourceRef": {
+            "integrationId": "{{integrationId}}",
+            "integrationKey": "{{integrationKey}}",
+            "configId": "{{configId}}",
+            "behaviorDeviceKey": "awair_element",
+            "optionKey": "co2_above",
+            "capability": "sensor.co2"
+          }
+        },
+        "conditions": {
+          "integrationCondition": {
+            "id": "co2_above",
+            "params": {
+              "ppm": 1000
+            }
+          }
+        },
+        "actions": [
+          {
+            "id": "post_discord_co2_alert",
+            "label": "Post to Discord",
+            "action": "discord_webhook",
+            "capability": "notification.discord_webhook",
+            "sourceRef": {
+              "integrationId": "{{integrationId}}",
+              "integrationKey": "{{integrationKey}}",
+              "configId": "{{configId}}",
+              "behaviorDeviceKey": "awair_element",
+              "optionKey": "discord_webhook",
+              "capability": "notification.discord_webhook"
+            },
+            "target": {
+              "mode": "selection",
+              "configIds": [
+                "{{configId}}"
+              ]
+            },
+            "parameters": {
+              "webhook_url": "{{discordWebhookUrl}}",
+              "message": "CO2 is above 1000 ppm. Time to bring fresh air into the room.",
+              "username": "PiPhi Air"
+            },
+            "failure": {
+              "strategy": "retry_then_continue",
+              "retry": {
+                "maxAttempts": 2,
+                "delaySeconds": 5,
+                "timeoutSeconds": 15,
+                "backoff": "fixed"
+              },
+              "continueOnPartialFailure": true
+            }
+          }
+        ],
+        "safety": {
+          "staleDataMode": "block",
+          "maxAgeSeconds": 300,
+          "requireFreshTrigger": true,
+          "dryRunFirst": false
+        },
+        "failure": {
+          "strategy": "follow_edges",
+          "fallbackBehaviorId": "",
+          "conditionTree": {
+            "op": "and",
+            "children": []
+          }
+        },
+        "stop": {
+          "never": true
+        },
+        "override": {
+          "mode": "continue"
+        }
+      },
+      "ui": {
+        "accent": "air_quality",
+        "icon": "message-circle"
+      },
+      "metadata": {
+        "recommended": true,
+        "difficulty": "easy",
+        "requires": [
+          "discord_webhook_url"
+        ]
+      }
+    },
+    {
+      "id": "awair_particle_discord_alert",
+      "label": "Post to Discord when particles are high",
+      "description": "Posts a Discord message when PM2.5 readings suggest air should be filtered or ventilated.",
+      "category": "Air quality",
+      "deviceKey": "awair_element",
+      "config": {
+        "automation_schema_version": "automation.behavior.v2",
+        "triggers": [
+          {
+            "id": "state_changed",
+            "label": "Awair reading changes",
+            "type": "integration_event",
+            "event": "device.state_changed",
+            "capability": "telemetry.state",
+            "enabled": true,
+            "sourceRef": {
+              "integrationId": "{{integrationId}}",
+              "integrationKey": "{{integrationKey}}",
+              "configId": "{{configId}}",
+              "behaviorDeviceKey": "awair_element",
+              "optionKey": "state_changed",
+              "capability": "telemetry.state"
+            }
+          }
+        ],
+        "trigger": {
+          "id": "state_changed",
+          "label": "Awair reading changes",
+          "type": "integration_event",
+          "event": "device.state_changed",
+          "capability": "telemetry.state",
+          "enabled": true,
+          "sourceRef": {
+            "integrationId": "{{integrationId}}",
+            "integrationKey": "{{integrationKey}}",
+            "configId": "{{configId}}",
+            "behaviorDeviceKey": "awair_element",
+            "optionKey": "state_changed",
+            "capability": "telemetry.state"
+          }
+        },
+        "intent": "monitor_air_quality",
+        "conditionTree": {
+          "id": "pm25_above_discord_template",
+          "label": "PM2.5 is above 35",
+          "field": "pm25",
+          "operator": ">",
+          "value": 35,
+          "sourceRef": {
+            "integrationId": "{{integrationId}}",
+            "integrationKey": "{{integrationKey}}",
+            "configId": "{{configId}}",
+            "behaviorDeviceKey": "awair_element",
+            "optionKey": "pm25_above",
+            "capability": "sensor.pm25"
+          }
+        },
+        "conditions": {
+          "integrationCondition": {
+            "id": "pm25_above",
+            "params": {
+              "ug_per_m3": 35
+            }
+          }
+        },
+        "actions": [
+          {
+            "id": "post_discord_pm25_alert",
+            "label": "Post to Discord",
+            "action": "discord_webhook",
+            "capability": "notification.discord_webhook",
+            "sourceRef": {
+              "integrationId": "{{integrationId}}",
+              "integrationKey": "{{integrationKey}}",
+              "configId": "{{configId}}",
+              "behaviorDeviceKey": "awair_element",
+              "optionKey": "discord_webhook",
+              "capability": "notification.discord_webhook"
+            },
+            "target": {
+              "mode": "selection",
+              "configIds": [
+                "{{configId}}"
+              ]
+            },
+            "parameters": {
+              "webhook_url": "{{discordWebhookUrl}}",
+              "message": "PM2.5 is above 35 ug/m3. Consider filtering the air or opening a window if outdoor air is clean.",
+              "username": "PiPhi Air"
+            },
+            "failure": {
+              "strategy": "retry_then_continue",
+              "retry": {
+                "maxAttempts": 2,
+                "delaySeconds": 5,
+                "timeoutSeconds": 15,
+                "backoff": "fixed"
+              },
+              "continueOnPartialFailure": true
+            }
+          }
+        ],
+        "safety": {
+          "staleDataMode": "block",
+          "maxAgeSeconds": 300,
+          "requireFreshTrigger": true,
+          "dryRunFirst": false
+        },
+        "failure": {
+          "strategy": "follow_edges",
+          "fallbackBehaviorId": "",
+          "conditionTree": {
+            "op": "and",
+            "children": []
+          }
+        },
+        "stop": {
+          "never": true
+        },
+        "override": {
+          "mode": "continue"
+        }
+      },
+      "ui": {
+        "accent": "air_quality",
+        "icon": "message-circle"
+      },
+      "metadata": {
+        "recommended": true,
+        "difficulty": "easy",
+        "requires": [
+          "discord_webhook_url"
+        ]
+      }
+    },
+    {
+      "id": "awair_sleep_humidity_alert",
+      "label": "Tell me when bedroom humidity is uncomfortable",
+      "description": "Sends a simple app notification when humidity moves outside a comfortable sleep range.",
+      "category": "Comfort",
+      "deviceKey": "awair_element",
+      "config": {
+        "automation_schema_version": "automation.behavior.v2",
+        "triggers": [
+          {
+            "id": "state_changed",
+            "label": "Awair reading changes",
+            "type": "integration_event",
+            "event": "device.state_changed",
+            "capability": "telemetry.state",
+            "enabled": true,
+            "sourceRef": {
+              "integrationId": "{{integrationId}}",
+              "integrationKey": "{{integrationKey}}",
+              "configId": "{{configId}}",
+              "behaviorDeviceKey": "awair_element",
+              "optionKey": "state_changed",
+              "capability": "telemetry.state"
+            }
+          }
+        ],
+        "trigger": {
+          "id": "state_changed",
+          "label": "Awair reading changes",
+          "type": "integration_event",
+          "event": "device.state_changed",
+          "capability": "telemetry.state",
+          "enabled": true
+        },
+        "intent": "protect_sleep",
+        "conditionTree": {
+          "id": "humidity_outside_sleep_range_template",
+          "label": "Humidity is outside 35% to 55%",
+          "field": "humidity",
+          "operator": "outside_range",
+          "value": {
+            "min": 35,
+            "max": 55
+          },
+          "sourceRef": {
+            "integrationId": "{{integrationId}}",
+            "integrationKey": "{{integrationKey}}",
+            "configId": "{{configId}}",
+            "behaviorDeviceKey": "awair_element",
+            "optionKey": "humidity_outside_range",
+            "capability": "sensor.humidity"
+          }
+        },
+        "conditions": {
+          "integrationCondition": {
+            "id": "humidity_outside_range",
+            "params": {
+              "min_percent": 35,
+              "max_percent": 55
+            }
+          }
+        },
+        "actions": [
+          {
+            "id": "send_sleep_humidity_notification",
+            "label": "Send notification",
+            "action": "notify",
+            "capability": "notification.send",
+            "sourceRef": {
+              "integrationId": "{{integrationId}}",
+              "integrationKey": "{{integrationKey}}",
+              "configId": "{{configId}}",
+              "behaviorDeviceKey": "awair_element",
+              "optionKey": "notify",
+              "capability": "notification.send"
+            },
+            "target": {
+              "mode": "selection",
+              "configIds": [
+                "{{configId}}"
+              ]
+            },
+            "parameters": {
+              "message": "Bedroom humidity is outside the 35% to 55% comfort range.",
+              "channel": "in_app"
+            },
+            "failure": {
+              "strategy": "retry_then_continue",
+              "retry": {
+                "maxAttempts": 2,
+                "delaySeconds": 2,
+                "timeoutSeconds": 10,
+                "backoff": "fixed"
+              },
+              "continueOnPartialFailure": true
+            }
+          }
+        ],
+        "safety": {
+          "staleDataMode": "block",
+          "maxAgeSeconds": 300,
+          "requireFreshTrigger": true,
+          "dryRunFirst": false
+        },
+        "failure": {
+          "strategy": "follow_edges",
+          "fallbackBehaviorId": "",
+          "conditionTree": {
+            "op": "and",
+            "children": []
+          }
+        },
+        "stop": {
+          "never": true
+        },
+        "override": {
+          "mode": "continue"
+        }
+      },
+      "ui": {
+        "accent": "comfort",
+        "icon": "moon"
+      },
+      "metadata": {
+        "recommended": true,
+        "difficulty": "easy"
+      }
     }
   ],
   "behaviorSchemaVersion": "integration.behaviors.v2"

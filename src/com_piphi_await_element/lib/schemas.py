@@ -38,9 +38,16 @@ class RuntimeConfigSyncResponse(BaseModel):
 
 class CommandRequest(BaseModel):
     command: str
+    contract_version: str | None = None
     entity_id: str | None = None
     device_id: str | None = None
+    config_id: str | None = None
+    capability: str | None = None
+    capability_requirements: list[str] = Field(default_factory=list)
     args: dict = Field(default_factory=dict)
+    params: dict = Field(default_factory=dict)
+    target: dict = Field(default_factory=dict)
+    runtime: dict = Field(default_factory=dict)
 
 
 class EventRequest(BaseModel):
